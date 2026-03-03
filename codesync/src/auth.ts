@@ -10,7 +10,7 @@ export class AuthManager {
     }
 
     async authenticate(): Promise<string | null> {
-        // Use VS Code's built-in GitHub authentication
+        // built-in GitHub authentication
         const session = await vscode.authentication.getSession(
             'github',
             ['repo', 'user:email'],

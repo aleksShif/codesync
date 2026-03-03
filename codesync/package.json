@@ -16,6 +16,10 @@
       {
         "command": "codesync.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "codesync.mockNotification", 
+        "title": "Developer: Mock Notifications"
       }
     ]
   },

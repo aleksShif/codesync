@@ -145,7 +145,7 @@ class AuthManager {
         return token ?? null;
     }
     async authenticate() {
-        // Use VS Code's built-in GitHub authentication
+        // built-in GitHub authentication
         const session = await vscode.authentication.getSession('github', ['repo', 'user:email'], { createIfNone: true });
         if (session) {
             await this.context.secrets.store('github_token', session.accessToken);
