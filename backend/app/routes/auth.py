@@ -18,7 +18,6 @@ load_dotenv()
 
 CLIENT_ID    = os.getenv("CLIENT_ID")
 CLIENT_SECRET= os.getenv("CLIENT_SECRET")
-CALLBACK_URL = os.getenv("CALLBACK_URL")
 FRONT_URL    = os.getenv("FRONT_URL")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -31,7 +30,6 @@ async def github_login():
 
     params = "&".join([
         f"client_id={CLIENT_ID}",
-        f"redirect_uri={CALLBACK_URL}",
         "scope=repo read:user user:email",
         f"state={nonce}",
         "allow_signup=true",
