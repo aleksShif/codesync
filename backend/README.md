@@ -45,6 +45,6 @@ npm install --global smee-client
 
 # 2. Run the forwarder
 This forwards webhooks from our shared channel to your local server
-smee -u https://smee.io/NyJnB4mesbF3DVAp -t http://localhost:8000
+smee -u https://smee.io/NyJnB4mesbF3DVAp -t http://localhost:8000/webhooks/github
 
 Make sure your backend is running on port 8000.
