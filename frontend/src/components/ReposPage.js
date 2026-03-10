@@ -58,7 +58,7 @@ const ReposPage = () => {
                         </>
                     )}
                 </div>
-                <a href={`${BACK_URL}/auth/logout`} className="text-sm text-[#888] hover:text-[#fff] transition-colors">
+                <a href={`${BACK_URL}auth/logout`} className="text-sm text-[#888] hover:text-[#fff] transition-colors">
                     Logout
                 </a>
             </nav>

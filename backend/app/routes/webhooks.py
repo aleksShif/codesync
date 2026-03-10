@@ -80,13 +80,17 @@ async def _grant_access(db: AsyncSession, user_id: int, repo_id: int):
 
 
 async def _onboard_single_repo(repo_data: dict, installation_id: int, token: str, grant_user_id: int | None = None):
-    """Upsert a single repo's basic metadata and grant access.
-    Full initialization (branches, files, collaborators) is done lazily on first access.
+    """Upsert a single repo's basic metadata, then immediately sync collaborators
+    so every user with push/admin access is granted UserAccess right away.
+    Full branch/file initialization is still done lazily on first access.
     """
     async with AsyncSessionLocal() as db:
         repo = await _upsert_repo(db, repo_data, installation_id, token)
         if grant_user_id is not None:
             await _grant_access(db, grant_user_id, repo.repository_id)
+        # Eagerly sync collaborators so all repo members get access immediately,
+        # not deferred until the first HTTP request to the repo.
+        await _sync_collaborators(db, repo, token)
         await db.commit()
 
 
