@@ -912,6 +912,18 @@ async def _handle_push(payload: dict):
         )
 
         await db.commit()
+        
+        try:
+            from app.StateTracker import repo_manager
+            owner, repo_name_split = repo_full_name.split("/")
+            for r in file_records:
+                repo_manager.github_api.update_latest_commit(
+                    owner, repo_name_split, branch_name, r["file_path"], r["file_latest_commit"]
+                )
+                repo_manager.handle_push_sync(owner, repo_name_split, branch_name, r["file_path"])
+        except Exception as e:
+            logger.error(f"Failed to update StateTracker for push: {e}")
+
         logger.info(
             f"Push sync complete for {repo_full_name}/{branch_name}: "
             f"Synced {len(file_records)} files (upserted/deleted as needed)"

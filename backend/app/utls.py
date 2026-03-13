@@ -1,6 +1,6 @@
 from .StateTracker.FileStates import PatchEvent
-from .StateTracker.GitMock import GitMock
-from .StateTracker.FileCache import FileCache, File
+#from .StateTracker.GitMock import GitMock
+from .StateTracker.GithubAPI import GithubAPI, File
 import re
 import time
 

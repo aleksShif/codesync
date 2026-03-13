@@ -1,133 +1,159 @@
-from .FileStates import FileStates, PatchEvent
-from .FileCache import FileCache, File
-from .GitMock import GitMock
+from .FileStates import PatchEvent
+from .GithubAPI import GithubAPI, File
 from collections import defaultdict
+from intervaltree import IntervalTree, Interval
 
 class Repo:
     def __init__(self):
-        self.branches = defaultdict(Branch)
+        self.files = defaultdict(IntervalTree) # file_path -> IntervalTree of [line start, line end) -> PatchEvent
+        self.default_branch = None
+        # dev_id -> branch -> file_path -> set of interval_obj
+        self.dev_intervals = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+        
+    def clear_dev_branch(self, dev_id: str, branch_name: str):
+        """Removal of all local intervals for a dev on a specific branch"""
+        for file_path, intervals in list(self.dev_intervals[dev_id][branch_name].items()):
+            for interval_obj in list(intervals):
+                self.files[file_path].discard(interval_obj)
+        self.dev_intervals[dev_id][branch_name].clear()
+        
 
 
-class Branch:
-    def __init__(self):
-        # file_path -> FileStates
-        self.files = defaultdict(FileStates)
+# class Branch:
+#     def __init__(self):
+#         # file_path -> FileStates
+#         self.files = defaultdict(FileStates)
 
 
 class RepoManager:
     
     def __init__(self):
         self.repos = defaultdict(Repo)
-        self.file_cache = FileCache()
-        self.git_mock = GitMock()
-        self.dev_workspaces = defaultdict(lambda: defaultdict(set)) # of dev -> (owner, repo, branch, base_commit) -> set of file paths user edited locally 
-        # ^ this is to find their local "changes" faster. 
+        self.github_api = GithubAPI()
 
-    def _ranges_overlap(self, ranges_a, ranges_b):
-        i = j = 0
-
-        while i < len(ranges_a) and j < len(ranges_b):
-            a_start, a_end = ranges_a[i]
-            b_start, b_end = ranges_b[j]
-
-            if a_end < b_start:
-                i += 1
-            elif b_end < a_start:
-                j += 1
-            else:
-                return True  
-
-        return False
-
-    
-    def patch_update(self, file: File, incoming_patch: PatchEvent):
-
+    async def patch_update(self, db, file: File, incoming_patch: PatchEvent):
         repo = self.repos[file.owner + file.repo]
-        branch = repo.branches[file.branch]
-        file_state = branch.files[file.path]
+        
+        if repo.default_branch is None:
+            repo.default_branch = await self.github_api.get_default_branch(db, file.owner, file.repo)
 
-        base_content = self.file_cache.get_file_content(file)
-
-        incoming_content = self.git_mock.apply_patch(base_content, incoming_patch.patch_text)
-
-        if incoming_content is None: 
-            # the patch doesn't apply to the base commit, it's invalid. We could be getting the wrong base commit.
+        latest_commit = await self.github_api.get_latest_commit_hash(db, file.owner, file.repo, incoming_patch.branch, file.path)
+        
+        if incoming_patch.base_commit != latest_commit:
+            # Wipe local changes from our system because they are invalid/outdated
+            repo.clear_dev_branch(incoming_patch.dev_id, incoming_patch.branch)
             return {
-                "conflict": False,
-                "invalid_patch": True
-            }
+                "conflict": False, 
+                "outdated": True, 
+                "details": "Patch is not on top of the latest commit. Please pull the latest changes and try again."
+                }
 
-        conflicting_patches = set()
+        tree = repo.files[file.path]
 
-        for existing_patch in file_state.get_patches_same_base(file.base_commit):
-            # if edit ranges don't overlap, skip expensive merge
-            if not self._ranges_overlap( incoming_patch.touched_ranges, existing_patch.touched_ranges ):
-                continue
-
-            # Otherwise do real mock git merge to detect conflicts
-            existing_content = self.git_mock.apply_patch(base_content, existing_patch.patch_text)
-
-            conflict, content = self.git_mock.check_merge_conflict(base_content, existing_content, incoming_content)
-
-            if conflict:
-                conflicting_patches.add((existing_patch, content))
-
-        file_state.add_patch(incoming_patch)
-        self.dev_workspaces[incoming_patch.dev_id][(file.owner, file.repo, file.branch, file.base_commit)].add(file.path)
-        if conflicting_patches:
-            return {
-                "conflict": True,
-                "conflicting_patches": [(p.__json__(), c) for p, c in list(conflicting_patches)],
-                "invalid_patch": False
-            }
-
-        return {
-            "conflict": False,
-            "invalid_patch": False
-        }
+        if incoming_patch.branch != repo.default_branch:           
+            self.github_api.get_branch_diff(file.owner, file.repo, repo.default_branch, incoming_patch.branch, repo, latest_commit)
             
 
-    def branch_update(self, dev_id: str, owner: str, repo_name: str, old_branch: str, new_branch: str, base_commit: str, new_base_commit = None):
+        # 3. Cleanup previous intervals for this user/branch/file
+        for ival in list(repo.dev_intervals[incoming_patch.dev_id][incoming_patch.branch][file.path]):
+            tree.discard(ival)
+        repo.dev_intervals[incoming_patch.dev_id][incoming_patch.branch][file.path].clear()
+
+        conflicting_lines = set()
+
+        # 4. Detect Conflicts (Pure Coordinate Overlap) and Add New Intervals
+        for start, end in incoming_patch.touched_ranges:
+            overlaps = tree.overlap(start, end + 1)
+            
+            for interval in overlaps:
+                existing_patch = interval.data
+                
+                # Ignore overlaps with COMMITS that belong to the SAME branch
+                # A branch does not conflict with its own commits!
+                if existing_patch.dev_id == "github-commit" and existing_patch.branch == incoming_patch.branch:
+                    continue
+                
+                # --- MAIN-CENTRIC LOGIC ---
+                # 1. If I am on MAIN: I only care about other patches on MAIN.
+                if incoming_patch.branch == repo.default_branch:
+                    if existing_patch.branch != repo.default_branch:
+                        continue
+                
+                # 2. If I am on a FEATURE: I care about MAIN (both committed and uncommitted).
+                if incoming_patch.branch != repo.default_branch:    
+                    # for now only care about feature branch vs main conflicts and within this feature branch conflicts.
+                    if existing_patch.branch != repo.default_branch and existing_patch.branch != incoming_patch.branch :
+                        continue
+                
+                # We simply extract the intersecting line numbers
+                overlap_start = max(start, interval.begin)
+                overlap_end = min(end + 1, interval.end)
+                for line_num in range(overlap_start, overlap_end):
+                    conflicting_lines.add(line_num)
+
+            # Store the interval with the data payload being the PatchEvent
+            new_interval = Interval(start, end + 1, incoming_patch)
+            tree.add(new_interval)
+            repo.dev_intervals[incoming_patch.dev_id][incoming_patch.branch][file.path].add(new_interval)
+
+        conflicting_branch_lines = []
+        # Use file.path instead of missing incoming_patch.file_path
+        if "github-commit" in repo.dev_intervals and incoming_patch.branch in repo.dev_intervals["github-commit"]:
+            for ival in repo.dev_intervals["github-commit"][incoming_patch.branch][file.path]:
+                conflicting_branch_lines.append((ival.begin, ival.end-1))
+            
+       
+        return {
+            "conflict": bool(conflicting_lines),
+            "conflicting_dev_lines": sorted(list(conflicting_lines)),
+            "conflicting_branch_lines": sorted(list(conflicting_branch_lines)),
+            "invalid_patch": False,
+            "outdated": False,
+            "details": "Patch processed."
+        }
+
+            
+
+    def branch_update(self, dev_id: str, owner: str, repo_name: str, old_branch: str, new_branch: str, base_commit: str, new_base_commit=None):
         """
         Triggered when a user switches branches.
-        Copies/migrates their current workspace patches to the new branch without changing base commit.
+        We simply clear their old intervals. The client will send fresh patches for the new branch.
         """
-        for file_path in self.dev_workspaces[dev_id][(owner, repo_name, old_branch, base_commit)]:
-            file_state = self.repos[owner + repo_name].branches[old_branch].files[file_path] 
-            patch = file_state.get_devs_patch(dev_id, base_commit)
-            if not patch:
-                continue
-            file_state.remove_patch(patch)
-            self.dev_workspaces[dev_id][(owner, repo_name, new_branch, base_commit)].add(file_path)
-            self.repos[owner + repo_name].branches[new_branch].files[file_path].add_patch(patch)
+        repo = self.repos[owner + repo_name]
+        repo.clear_dev_branch(dev_id, old_branch)
+
+    def handle_push_sync(self, owner: str, repo_name: str, branch: str, file_path: str):
+        full_repo_name = owner + repo_name
+        if full_repo_name not in self.repos:
+            return
+
+        full_repo_name = owner + repo_name
+        repo = self.repos[full_repo_name]
         
-        self.dev_workspaces[dev_id][(owner, repo_name, old_branch, base_commit)] = set()
+        # If the default branch was pushed, ALL feature branch diffs are potentially outdated
+        if branch == repo.default_branch:
+            self.github_api.clear_all_repo_diffs(owner, repo_name, repo)
+        else:
+            # Clear only the specific diff for this branch
+            diff_key = (owner, repo_name, repo.default_branch or "main", branch)
+            if diff_key in self.github_api.branch_diffs.cache:
+                del self.github_api.branch_diffs.cache[diff_key]
+            
+            # 1. Clear intervals for this branch specifically
+            if "github-commit" in repo.dev_intervals:
+                for path, intervals in list(repo.dev_intervals["github-commit"][branch].items()):
+                    for ival in list(intervals):
+                        repo.files[path].discard(ival)
+                repo.dev_intervals["github-commit"][branch].clear()
+    
 
-        if new_base_commit is not None:
-            self.base_commit_update(dev_id, owner, repo_name, new_branch, base_commit, new_base_commit)
-
-
-    def base_commit_update(self, dev_id:str, owner: str, repo_name: str, branch: str, old_base: str, new_base: str):
-        """
-        Triggered when a branch advances its base commit (pull/rebase).
-        Updates all stored patches for the user in this branch to the new base commit.
-        """
-        for file_path in self.dev_workspaces[dev_id][(owner, repo_name, branch, old_base)]:
-            file_state = self.repos[owner + repo_name].branches[branch].files[file_path] 
-            patch = file_state.get_devs_patch(dev_id, old_base)
-            file_state.remove_patch(patch)
-
-            new_patch = PatchEvent(
-                dev_id=patch.dev_id,
-                base_commit=new_base,
-                timestamp=patch.timestamp,
-                patch_text=patch.patch_text,
-                author=patch.author,
-                touched_ranges=patch.touched_ranges
-            )
-
-            file_state.add_patch(new_patch)
-            self.dev_workspaces[dev_id][(owner, repo_name, branch, new_base)].add(file_path)
-           
+        # Remove all existing intervals (uncommitted and synthetic committed) for this branch/file
+        # This forces the slate clean. They will be rebuilt on the exact next keystroke.
+        tree = repo.files[file_path]
         
-        self.dev_workspaces[dev_id][(owner, repo_name, branch, old_base)] = set()   
+        # We must collect ALL devs who had an interval on this branch to purge them
+        for dev_id in list(repo.dev_intervals.keys()):
+            intervals_to_remove = list(repo.dev_intervals[dev_id][branch][file_path])
+            for ival in intervals_to_remove:
+                tree.discard(ival)
+            repo.dev_intervals[dev_id][branch][file_path].clear()

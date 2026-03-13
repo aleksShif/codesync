@@ -159,11 +159,14 @@ export class SocketClient {
         });
     }
 
-    private send(payload: object): void {
+    private send(payload: any): void {
+        console.log(`DEBUG: socketClient.send() called for type: ${payload.type}`);
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(payload));
+            console.log(`DEBUG: ${payload.type} message SENT to server`);
         } else {
-            console.warn('CodeSync: Attempted to send message but socket is not open');
+            const state = this.ws ? this.ws.readyState : 'NULL';
+            console.warn(`DEBUG: Cannot send ${payload.type} - Socket not open (State: ${state})`);
         }
     }
 

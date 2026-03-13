@@ -1,4 +1,4 @@
-from collections import defaultdict
+# from collections import defaultdict
 from dataclasses import dataclass
 
 # frozen=True makes the object immutable and hashable
@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class PatchEvent:
     dev_id: str
     base_commit: str
+    branch: str
     timestamp: float
     patch_text: str
     author: str
@@ -14,6 +15,7 @@ class PatchEvent:
     def __json__(self):
         return {
             "dev_id": self.dev_id,
+            "branch": self.branch,
             "base_commit": self.base_commit,
             "timestamp": self.timestamp,
             "patch_text": self.patch_text,
@@ -21,21 +23,21 @@ class PatchEvent:
             "touched_ranges": self.touched_ranges
         }
 
-class FileStates:
-    def __init__(self):
-        self.patches_by_base = defaultdict(dict)
-        # base_commit -> dev_id -> PatchEvent
+# class FileStates:
+#     def __init__(self):
+#         self.patches_by_base = defaultdict(dict)
+#         # base_commit -> dev_id -> PatchEvent
 
-    def add_patch(self, patch: PatchEvent):
-        self.patches_by_base[patch.base_commit][patch.dev_id] = patch
+#     def add_patch(self, patch: PatchEvent):
+#         self.patches_by_base[patch.base_commit][patch.dev_id] = patch
 
-    def get_patches_same_base(self, base_commit: str):
-        return self.patches_by_base.get(base_commit, {}).values()
+#     def get_patches_same_base(self, base_commit: str):
+#         return self.patches_by_base.get(base_commit, {}).values()
 
-    def get_devs_patch(self, dev_id: str, base_commit: str):
-        return self.patches_by_base.get(base_commit, {}).get(dev_id)
+#     def get_devs_patch(self, dev_id: str, base_commit: str):
+#         return self.patches_by_base.get(base_commit, {}).get(dev_id)
 
-    def remove_patch(self, patch: PatchEvent):
-        base_map = self.patches_by_base.get(patch.base_commit)
-        if base_map:
-            base_map.pop(patch.dev_id, None)
+#     def remove_patch(self, patch: PatchEvent):
+#         base_map = self.patches_by_base.get(patch.base_commit)
+#         if base_map:
+#             base_map.pop(patch.dev_id, None)

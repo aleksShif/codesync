@@ -4,7 +4,7 @@ import time
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .StateTracker.RepoManager import RepoManager
-from .StateTracker.FileCache import File
+from .StateTracker.GithubAPI import File
 from .StateTracker.FileStates import PatchEvent
 from .utls import parse_update
 from app.routes import auth
@@ -13,8 +13,7 @@ from app.routes import webhooks
 from .db.db import create_all_tables
 from app.middleware.auth_middleware import AuthMiddleware, get_current_user_ws
 
-logger = logging.getLogger(__name__)
-repo_manager = RepoManager()
+from .StateTracker import repo_manager
 
 app = FastAPI()
 app.add_middleware(AuthMiddleware)
@@ -79,18 +78,6 @@ async def developer_updates(websocket: WebSocket, user = Depends(get_current_use
         "new_base_commit": "def456"   // optional — if the new branch has a different tip
     }
 
-    --- base_commit_update ---
-    Sent when the developer pulls or rebases, advancing the branch tip.
-    Their stored patches are re-keyed to the new base commit hash.
-    {
-        "type":     "base_commit_update",
-        "dev_id":   "alice",
-        "owner":    "acme",
-        "repo":     "myapp",
-        "branch":   "feature/login",
-        "old_base": "abc123",
-        "new_base": "def456"
-    }
     """
     await websocket.accept()
 
@@ -109,7 +96,7 @@ async def developer_updates(websocket: WebSocket, user = Depends(get_current_use
                 continue
 
             msg_type = msg.get("type")
-
+            print(msg)
             # patch_update — developer sent a code change
             if msg_type == "patch_update":
                 await handle_patch_update(websocket, msg)
@@ -118,16 +105,12 @@ async def developer_updates(websocket: WebSocket, user = Depends(get_current_use
             elif msg_type == "branch_update":
                 await handle_branch_update(websocket, msg)
 
-            # base_commit_update — developer pulled / rebased
-            elif msg_type == "base_commit_update":
-                await handle_base_commit_update(websocket, msg)
-
             #unknown message type
             else:
                 await websocket.send_text(json.dumps({
                     "ok": False,
                     "error": "unknown_type",
-                    "detail": f"Unknown message type: '{msg_type}'. Expected: patch_update | branch_update | base_commit_update"
+                    "detail": f"Unknown message type: '{msg_type}'. Expected: patch_update | branch_update"
                 }))
 
     except WebSocketDisconnect:
@@ -144,30 +127,13 @@ async def handle_patch_update(websocket, msg):
         }))
         return
     
-    result = repo_manager.patch_update(file, patch)
+    from app.db.db import SessionLocal
+    async with SessionLocal() as db:
+        result = await repo_manager.patch_update(db, file, patch)
 
-    if result.get("invalid_patch"):
-        response = {
-            "ok": False,
-            "type": "patch_update",
-            "error": "invalid_patch",
-            "detail": "Patch does not apply to the given base commit"
-        }
-    elif result.get("conflict"):
-        response = {
-            "ok": True,
-            "type": "patch_update",
-            "conflict": True,
-            "conflicting_patches": result["conflicting_patches"] # list of (patch, content with conflicts)
-        }
-    else:
-        response = {
-            "ok": True,
-            "type": "patch_update",
-            "conflict": False,
-        }
+    print(result)
 
-    await websocket.send_text(json.dumps(response))
+    await websocket.send_text(json.dumps(result))
 
 async def handle_branch_update(websocket, msg):
     try:
@@ -191,21 +157,6 @@ async def handle_branch_update(websocket, msg):
             "detail": f"Required field missing: {e}"
         }))
 
-async def handle_base_commit_update(websocket, msg):
-    try:
-        repo_manager.base_commit_update(
-            dev_id=msg["dev_id"],
-            owner=msg["owner"],
-            repo_name=msg["repo"],
-            branch=msg["branch"],
-            old_base=msg["old_base"],
-            new_base=msg["new_base"],
-        )
-        await websocket.send_text(json.dumps({
-            "ok": True,
-            "type": "base_commit_update",
-        }))
-    except KeyError as e:
         await websocket.send_text(json.dumps({
             "ok": False,
             "error": "missing_field",
