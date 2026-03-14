@@ -32,14 +32,14 @@ class RepoManager:
         self.github_api = GithubAPI()
 
     async def patch_update(self, db, file: File, incoming_patch: PatchEvent):
-        repo = self.repos[file.owner + file.repo]
+        repo = self.repos[file.owner + "/" + file.repo]
         
         if repo.default_branch is None:
             repo.default_branch = await self.github_api.get_default_branch(db, file.owner, file.repo)
 
         latest_commit = await self.github_api.get_latest_commit_hash(db, file.owner, file.repo, incoming_patch.branch, file.path)
-        
-        if incoming_patch.base_commit != latest_commit:
+        print("LATEST COMMIT: ", latest_commit)
+        if latest_commit is not None and incoming_patch.base_commit != latest_commit:
             # Wipe local changes from our system because they are invalid/outdated
             repo.clear_dev_branch(incoming_patch.dev_id, incoming_patch.branch)
             return {
@@ -119,15 +119,15 @@ class RepoManager:
         Triggered when a user switches branches.
         We simply clear their old intervals. The client will send fresh patches for the new branch.
         """
-        repo = self.repos[owner + repo_name]
+        print("Get branch update ", dev_id, owner, repo_name, old_branch, new_branch, base_commit, new_base_commit)
+        repo = self.repos[owner + "/" + repo_name]
         repo.clear_dev_branch(dev_id, old_branch)
 
     def handle_push_sync(self, owner: str, repo_name: str, branch: str, file_path: str):
-        full_repo_name = owner + repo_name
+        full_repo_name = owner + "/" + repo_name
         if full_repo_name not in self.repos:
             return
 
-        full_repo_name = owner + repo_name
         repo = self.repos[full_repo_name]
         
         # If the default branch was pushed, ALL feature branch diffs are potentially outdated

@@ -9,6 +9,7 @@ export class SocketClient {
     private jwt: string | null = null;
     private reconnectTimeout: NodeJS.Timeout | null = null;
     private currentRepo: { owner: string; repo: string; branch: string } | null = null;
+    private messageQueue: any[] = [];
 
     async connect(githubToken: string, repoOwner: string, repoName: string, branch: string): Promise<void> {
         this.currentRepo = { owner: repoOwner, repo: repoName, branch };
@@ -39,6 +40,15 @@ export class SocketClient {
         this.ws.on('open', () => {
             console.log('CodeSync: WebSocket connected');
             vscode.window.showInformationMessage('CodeSync: Connected to server');
+
+            // Flush queued messages
+            if (this.messageQueue.length > 0) {
+                console.log(`DEBUG: Flushing ${this.messageQueue.length} queued messages`);
+                while (this.messageQueue.length > 0) {
+                    const msg = this.messageQueue.shift();
+                    this.send(msg);
+                }
+            }
         });
 
         this.ws.on('message', (data: WebSocket.Data) => {
@@ -160,13 +170,14 @@ export class SocketClient {
     }
 
     private send(payload: any): void {
-        console.log(`DEBUG: socketClient.send() called for type: ${payload.type}`);
+        const type = payload.type || 'unknown';
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(payload));
-            console.log(`DEBUG: ${payload.type} message SENT to server`);
+            console.log(`DEBUG: ${type} message SENT to server`);
         } else {
             const state = this.ws ? this.ws.readyState : 'NULL';
-            console.warn(`DEBUG: Cannot send ${payload.type} - Socket not open (State: ${state})`);
+            console.log(`DEBUG: Queuing ${type} message (Socket state: ${state})`);
+            this.messageQueue.push(payload);
         }
     }
 

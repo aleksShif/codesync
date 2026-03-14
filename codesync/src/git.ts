@@ -31,6 +31,7 @@ export async function monitorGitRepository(
 
     // handle repos already open when extension activates
     if (git.repositories.length > 0) {
+        console.log('DEBUG: monitorGitRepository - Found', git.repositories.length, 'repos already open');
         const info = extractRepoInfo(git.repositories[0]);
         if (info) onRepoDetected(info);
     }
@@ -61,8 +62,8 @@ export async function monitorGitRepository(
 export function getCurrentCommitHash(): string | undefined {
     const gitExtension = vscode.extensions.getExtension('vscode.git');
     if (!gitExtension) return;
-    const git = gitExtension?.exports.getAPI(1); 
-    return git?.repositories[0]?.state.HEAD?.commit; 
+    const git = gitExtension?.exports.getAPI(1);
+    return git?.repositories[0]?.state.HEAD?.commit;
 }
 
 export function parseRemoteUrl(remoteUrl: string): { owner: string; repoName: string } | null {
@@ -95,14 +96,51 @@ export async function computeDiff(
         if (!git?.repositories?.[0]) return null;
 
         const repo = git.repositories.find((r: any) => r.rootUri.fsPath === repoPath);
-        if (!repo) return null;
+        if (!repo) {
+            console.warn('DEBUG: computeDiff - Repo path mismatch:', repoPath);
+            return null;
+        }
 
-        const absolutePath = vscode.Uri.file(`${repoPath}/${filePath}`);
+        // Handle both relative and absolute paths safely
+        const absolutePath = filePath.startsWith('/') || filePath.includes(':')
+            ? vscode.Uri.file(filePath)
+            : vscode.Uri.file(`${repoPath}/${filePath}`);
+
+        console.log('DEBUG: computeDiff - Computing diff for:', absolutePath.fsPath);
         const diff = await repo.diffWithHEAD(absolutePath.fsPath);
-        
+
         return diff || null;
     } catch (err) {
         console.error('CodeSync: Failed to compute diff', err);
         return null;
+    }
+}
+
+export async function getModifiedFiles(repoPath: string): Promise<string[]> {
+    try {
+        const gitExtension = vscode.extensions.getExtension('vscode.git');
+        if (!gitExtension) return [];
+
+        const git = gitExtension.exports.getAPI(1);
+        const repo = git.repositories.find((r: any) => r.rootUri.fsPath === repoPath);
+        if (!repo) return [];
+
+        // workingTreeChanges = unstaged, indexChanges = staged
+        const changes = [
+            ...repo.state.workingTreeChanges,
+            ...repo.state.indexChanges
+        ];
+
+        const paths = new Set<string>();
+        changes.forEach((change: any) => {
+            // Store as relative path for consistency with other parts of the app
+            const relPath = vscode.workspace.asRelativePath(change.uri);
+            paths.add(relPath);
+        });
+
+        return Array.from(paths);
+    } catch (err) {
+        console.error('CodeSync: Failed to get modified files', err);
+        return [];
     }
 }

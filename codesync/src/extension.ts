@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { AuthManager, getGitHubUser } from './auth';
 import { FileWatcher } from './fileWatcher';
-import { monitorGitRepository, getCurrentCommitHash, parseRemoteUrl, computeDiff } from './git';
+import { monitorGitRepository, getCurrentCommitHash, parseRemoteUrl, computeDiff, getModifiedFiles } from './git';
 import { SocketClient } from './socket';
 
 const socketClient = new SocketClient();
@@ -9,6 +9,10 @@ const socketClient = new SocketClient();
 let statusBar: vscode.StatusBarItem;
 let currentBranch: string | null = null;
 let baseCommitHash: string | undefined;
+let devId: string;
+let owner: string;
+let repoName: string;
+let oldHash: string | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('CodeSync: activate() called');
@@ -30,12 +34,36 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showWarningMessage('CodeSync: Failed to fetch GitHub user info');
         return;
     }
-    const devId = githubUser.id;
+    devId = githubUser.id;
     console.log('Authentication complete');
+
+    async function syncRepositoryState(repoPath: string, owner: string, repo: string, branch: string, hash: string) {
+        const modifiedFiles = await getModifiedFiles(repoPath);
+        if (modifiedFiles.length > 0) {
+            console.log(`DEBUG: syncRepositoryState starting. Found ${modifiedFiles.length} modified files.`);
+            for (const filePath of modifiedFiles) {
+                const patch = await computeDiff(filePath, repoPath);
+                if (patch) {
+                    console.log(`DEBUG: Sending patch for ${filePath} on branch ${branch}`);
+                    socketClient.sendPatchUpdate(
+                        devId,
+                        owner,
+                        repo,
+                        branch,
+                        filePath,
+                        hash,
+                        patch
+                    );
+                }
+            }
+        } else {
+            console.log('DEBUG: syncRepositoryState skipped - no modified files found.');
+        }
+    }
 
     await monitorGitRepository(
         async (repo) => {
-            currentBranch = repo.branch;
+            // Initial setup for the detected repository
             baseCommitHash = getCurrentCommitHash();
             statusBar.text = `$(git-branch) CodeSync: ${repo.branch}`;
             vscode.window.showInformationMessage(`CodeSync: Monitoring ${repo.remoteUrl}`);
@@ -45,53 +73,114 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showWarningMessage('CodeSync: Could not parse remote URL');
                 return;
             }
-            const { owner, repoName } = parsed;
+            owner = parsed.owner;
+            repoName = parsed.repoName;
+            currentBranch = repo.branch;
+
+            // Send initial branch update to register with backend
+            console.log('DEBUG: Sending initial branch_update for', owner, '/', repoName);
+            socketClient.sendBranchUpdate(
+                devId,
+                owner,
+                repoName,
+                '', // No old branch
+                repo.branch,
+                '', // No old hash
+                baseCommitHash
+            );
+
+            // Initial re-sync
+            if (baseCommitHash) {
+                await syncRepositoryState(repo.path, owner, repoName, repo.branch, baseCommitHash);
+            }
 
             await socketClient.connect(token, owner, repoName, repo.branch)
             const watcher = new FileWatcher(async (event) => {
                 console.log('DEBUG: FileWatcher event:', event.type, 'Path:', event.filePath, 'BaseHash:', baseCommitHash);
 
-                if (event.type === 'save' || event.type === 'edit') {
+                if (event.type === 'save') {
+                    // On save, re-sync the entire repo state to ensure accuracy
+                    if (baseCommitHash) {
+                        await syncRepositoryState(repo.path, owner, repoName, currentBranch!, baseCommitHash);
+                    }
+                } else if (event.type === 'edit') {
+                    // On edit (keystroke), just send the single file patch for real-time updates
                     if (!baseCommitHash) {
-                        console.warn('DEBUG: Skipping update - baseCommitHash is missing');
+                        console.warn('DEBUG: Skipping edit update - baseCommitHash is missing');
                         return;
                     }
                     const patch = await computeDiff(event.filePath, repo.path);
                     if (patch) {
-                        console.log('DEBUG: Calling sendPatchUpdate for', event.filePath);
+                        console.log('DEBUG: Calling sendPatchUpdate (edit) for', event.filePath);
                         socketClient.sendPatchUpdate(
                             devId,
-                            parsed.owner,
-                            parsed.repoName,
+                            owner,
+                            repoName,
                             currentBranch!,
                             event.filePath,
                             baseCommitHash,
                             patch
                         );
-                    } else {
-                        console.log('DEBUG: No diff found for', event.filePath);
                     }
                 }
             });
             context.subscriptions.push({ dispose: () => watcher.dispose() });
         },
-        (repo) => {
-            // branch changed or repo state updated
+        async (repo) => {
+            console.log('DEBUG: onRepoChanged called. Branch:', repo.branch, 'Current:', currentBranch);
             const newCommitHash = getCurrentCommitHash();
 
             if (repo.branch != currentBranch) {
-                // branch has changed, send branch_update to server
+                console.log('DEBUG: Branch switch detected:', currentBranch, '->', repo.branch);
+                const oldBranch = currentBranch;
+                oldHash = baseCommitHash;
                 currentBranch = repo.branch;
                 baseCommitHash = newCommitHash;
-                console.log('Branch switched, new commit hash: ', baseCommitHash);
-            } else if (newCommitHash != baseCommitHash) {
-                // same branch but base commit hash has changed, send base_commit_update to server
-                const oldHash = baseCommitHash;
-                baseCommitHash = newCommitHash;
-                console.log('Pull rebase detected, base commit advanced: ', oldHash, '->', baseCommitHash);
+
+                const parsed = parseRemoteUrl(repo.remoteUrl);
+                if (!parsed) {
+                    console.error('DEBUG: Cannot send branch_update - Could not parse remote URL');
+                    return;
+                }
+
+                console.log('DEBUG: Sending branch_update for', parsed.owner, '/', parsed.repoName);
+                socketClient.sendBranchUpdate(
+                    devId,
+                    parsed.owner,
+                    parsed.repoName,
+                    oldBranch || '',
+                    repo.branch,
+                    oldHash || '',
+                    newCommitHash
+                );
+
+                // Re-sync all modified files on the new branch
+                if (newCommitHash) {
+                    await syncRepositoryState(repo.path, parsed.owner, parsed.repoName, repo.branch, newCommitHash);
+                }
+            } else if (newCommitHash && newCommitHash != baseCommitHash) {
+                console.log('DEBUG: Base commit change detected:', baseCommitHash, '->', newCommitHash);
+
+                const parsed = parseRemoteUrl(repo.remoteUrl);
+                if (parsed) {
+                    // Inform backend about the base commit update
+                    socketClient.sendBranchUpdate(
+                        devId,
+                        parsed.owner,
+                        parsed.repoName,
+                        repo.branch, // old and new are the same
+                        repo.branch,
+                        baseCommitHash || '',
+                        newCommitHash
+                    );
+
+                    baseCommitHash = newCommitHash;
+
+                    // Immediately re-sync to avoid the "dead zone"
+                    await syncRepositoryState(repo.path, parsed.owner, parsed.repoName, repo.branch, newCommitHash);
+                }
             }
             statusBar.text = `$(git-branch) CodeSync: ${repo.branch}`;
-            console.log('Repo state changed:', repo);
         }
     );
 

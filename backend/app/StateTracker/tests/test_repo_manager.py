@@ -110,13 +110,13 @@ def test_strict_commit_rejection():
     rm.github_api.latest_commits[("acme", "myapp", "main", "greet.py")] = "new456" # DB has advanced!
     
     alice_patch = make_patch("alice", "main", PATCH_ALICE_LINE2, [(2, 2)], base_commit="abc123")
-    rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"].add("fake_interval")
+    rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"].add("fake_interval")
     
     result = asyncio.run(rm.patch_update(db, file, alice_patch))
     
     assert result["outdated"] is True
     assert result["conflict"] is False
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
 
 def test_clean_patch_accepted():
     rm, db, file = setup_rm()
@@ -125,7 +125,7 @@ def test_clean_patch_accepted():
     
     assert result["conflict"] is False
     assert result["outdated"] is False
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"]) == 1
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"]) == 1
 
 def test_cross_branch_uncommitted_conflict():
     """Two devs on DIFFERENT branches edit the same lines, uncommitted vs uncommitted."""
@@ -147,10 +147,10 @@ def test_branch_switch_purges_old():
     rm, db, file = setup_rm()
     alice_patch = make_patch("alice", "main", PATCH_ALICE_LINE2, [(2, 2)])
     asyncio.run(rm.patch_update(db, file, alice_patch))
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]) == 1
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]) == 1
     
     rm.branch_update("alice", "acme", "myapp", "main", "feature", "abc123")
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
 
 def test_global_push_sync_evicts_branch():
     """handle_push_sync completely removes all intervals for a branch globally."""
@@ -159,8 +159,8 @@ def test_global_push_sync_evicts_branch():
     asyncio.run(rm.patch_update(db, file, alice_patch))
     
     rm.handle_push_sync("acme", "myapp", "main", "greet.py")
-    assert len(rm.repos["acmemyapp"].files["greet.py"]) == 0
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
+    assert len(rm.repos["acme/myapp"].files["greet.py"]) == 0
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"]) == 0
 
 def test_fresh_branch_no_commits():
     """If a branch has no commits relative to main, fetching diff returns empty, no conflict occurs naturally."""
@@ -298,8 +298,8 @@ def test_push_sync_full_lifecycle():
     rm.handle_push_sync("acme", "myapp", "feat-x", "greet.py")
     
     # Verify Bob's intervals are gone, but Alice's remain
-    assert len(rm.repos["acmemyapp"].dev_intervals["bob"]["feat-x"]["greet.py"]) == 0
-    assert len(rm.repos["acmemyapp"].dev_intervals["alice"]["main"]["greet.py"]) == 1
+    assert len(rm.repos["acme/myapp"].dev_intervals["bob"]["feat-x"]["greet.py"]) == 0
+    assert len(rm.repos["acme/myapp"].dev_intervals["alice"]["main"]["greet.py"]) == 1
     
     # 3. Bob sends a NEW patch on feat-x that still overlaps
     result2 = asyncio.run(rm.patch_update(db, file_feat, bob_patch))

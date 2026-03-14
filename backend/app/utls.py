@@ -36,6 +36,7 @@ def parse_update(msg: dict):
         patch = PatchEvent(
             dev_id=msg["dev_id"],
             base_commit=msg["base_commit"],
+            branch=msg["branch"],
             timestamp=msg.get("timestamp", time.time()),
             patch_text=msg["patch"],
             author=msg.get("author", msg["dev_id"]),

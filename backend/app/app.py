@@ -127,8 +127,8 @@ async def handle_patch_update(websocket, msg):
         }))
         return
     
-    from app.db.db import SessionLocal
-    async with SessionLocal() as db:
+    from app.db.db import AsyncSessionLocal
+    async with AsyncSessionLocal() as db:
         result = await repo_manager.patch_update(db, file, patch)
 
     print(result)
@@ -136,29 +136,45 @@ async def handle_patch_update(websocket, msg):
     await websocket.send_text(json.dumps(result))
 
 async def handle_branch_update(websocket, msg):
+    print(f"DEBUG: Received branch_update: {msg}")
     try:
+        # Extract fields first
+        dev_id = msg["dev_id"]
+        owner = msg["owner"]
+        repo_name = msg["repo"]
+        old_branch = msg["old_branch"]
+        new_branch = msg["new_branch"]
+        base_commit = msg["base_commit"]
+        new_base_commit = msg.get("new_base_commit")
+    except KeyError as e:
+        print(f"DEBUG: branch_update failed - missing field: {e}")
+        await websocket.send_text(json.dumps({
+            "ok": False,
+            "error": "missing_field",
+            "detail": f"Required field missing: {e}"
+        }))
+        return
+    
+    try:
+        print(f"DEBUG: Executing branch_update for {owner}/{repo_name}: {old_branch} -> {new_branch}")
         repo_manager.branch_update(
-            dev_id=msg["dev_id"],
-            owner=msg["owner"],
-            repo_name=msg["repo"],
-            old_branch=msg["old_branch"],
-            new_branch=msg["new_branch"],
-            base_commit=msg["base_commit"],
-            new_base_commit=msg.get("new_base_commit"),
+            dev_id=dev_id,
+            owner=owner,
+            repo_name=repo_name,
+            old_branch=old_branch,
+            new_branch=new_branch,
+            base_commit=base_commit,
+            new_base_commit=new_base_commit,
         )
         await websocket.send_text(json.dumps({
             "ok": True,
             "type": "branch_update",
         }))
-    except KeyError as e:
-        await websocket.send_text(json.dumps({
+        print("DEBUG: branch_update SUCCESS")
+    except Exception as e:
+         print(f"DEBUG: branch_update error: {e}")
+         await websocket.send_text(json.dumps({
             "ok": False,
-            "error": "missing_field",
-            "detail": f"Required field missing: {e}"
-        }))
-
-        await websocket.send_text(json.dumps({
-            "ok": False,
-            "error": "missing_field",
-            "detail": f"Required field missing: {e}"
+            "error": "server_error",
+            "detail": f"An error occurred while updating branch: {str(e)}"
         }))

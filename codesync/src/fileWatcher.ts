@@ -21,7 +21,7 @@ export class FileWatcher {
         // to detect a file being edited
         vscode.workspace.onDidChangeTextDocument((e) => {
             const filePath = vscode.workspace.asRelativePath(e.document.uri);
-            
+
             if (this.shouldIgnore(filePath)) return;
 
             // to extract changed lines
@@ -42,7 +42,7 @@ export class FileWatcher {
                 this.onFileChange({ type: 'save', filePath, timestamp: new Date().toISOString() });
             }
         });
-        
+
         // to detect a file being closed
         vscode.workspace.onDidCloseTextDocument((doc) => {
             const filePath = vscode.workspace.asRelativePath(doc.uri);
