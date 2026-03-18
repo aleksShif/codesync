@@ -95,18 +95,10 @@ class RepoManager:
             new_interval = Interval(start, end + 1, incoming_patch)
             tree.add(new_interval)
             repo.dev_intervals[incoming_patch.dev_id][incoming_patch.branch][file.path].add(new_interval)
-
-        conflicting_branch_lines = []
-        # Use file.path instead of missing incoming_patch.file_path
-        if "github-commit" in repo.dev_intervals and incoming_patch.branch in repo.dev_intervals["github-commit"]:
-            for ival in repo.dev_intervals["github-commit"][incoming_patch.branch][file.path]:
-                conflicting_branch_lines.append((ival.begin, ival.end-1))
-            
        
         return {
             "conflict": bool(conflicting_lines),
             "conflicting_dev_lines": sorted(list(conflicting_lines)),
-            "conflicting_branch_lines": sorted(list(conflicting_branch_lines)),
             "invalid_patch": False,
             "outdated": False,
             "details": "Patch processed."
