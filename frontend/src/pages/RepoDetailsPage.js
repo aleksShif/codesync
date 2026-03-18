@@ -144,7 +144,7 @@ function generateGraph(tree, expandedFolders) {
                 source: parentId,
                 target: child.id,
                 type: 'floralEdge',
-                style: { stroke: '#222', strokeWidth: 1.2 },
+                style: { stroke: '#333', strokeWidth: 1 },
             });
 
             if (isFolder && isExpanded) {
@@ -208,9 +208,9 @@ const RootNode = ({ data, selected }) => (
     <div style={{
         width: ROOT_R * 2, height: ROOT_R * 2,
         borderRadius: '50%',
-        background: selected ? '#1c1025' : '#110d1a',
-        border: `1.5px solid ${selected ? '#7c3aed' : '#3b1f6e'}`,
-        boxShadow: '0 0 24px rgba(124,58,237,0.25), 0 0 2px rgba(124,58,237,0.5)',
+        background: selected ? '#1a1a1a' : '#111111',
+        border: `1.5px solid ${selected ? '#ffffff' : '#444444'}`,
+        boxShadow: selected ? '0 0 0 1px #555' : 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'default', position: 'relative',
     }}>
@@ -218,7 +218,7 @@ const RootNode = ({ data, selected }) => (
         <Handle type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: 'none' }} />
         <Handle type="source" position={Position.Left}   style={{ opacity: 0, pointerEvents: 'none' }} />
         <Handle type="source" position={Position.Right}  style={{ opacity: 0, pointerEvents: 'none' }} />
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#7c3aed">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ededed">
             <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
         </svg>
     </div>
@@ -230,14 +230,14 @@ const FolderNode = ({ data, selected }) => (
     <div
         style={{
             width: FOLDER_W, height: FOLDER_H,
-            background: selected ? '#16101f' : '#0c0812',
-            border: `1px solid ${selected ? '#5b3fa0' : '#2a1f42'}`,
+            background: selected ? '#1a1a1a' : '#111111',
+            border: `1px solid ${selected ? '#555555' : '#2a2a2a'}`,
             borderRadius: 10,
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '0 12px', cursor: 'pointer',
             boxShadow: selected
-                ? '0 0 0 1px #4c2e8a, 0 4px 20px rgba(124,58,237,0.18)'
-                : '0 2px 12px rgba(0,0,0,0.5)',
+                ? '0 0 0 1px #444'
+                : '0 2px 8px rgba(0,0,0,0.5)',
             transition: 'all 0.18s ease',
             fontFamily: '"Geist Mono", "JetBrains Mono", monospace',
             position: 'relative',
@@ -252,18 +252,18 @@ const FolderNode = ({ data, selected }) => (
         <Handle type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: 'none' }} />
         <Handle type="source" position={Position.Left}   style={{ opacity: 0, pointerEvents: 'none' }} />
         <Handle type="source" position={Position.Right}  style={{ opacity: 0, pointerEvents: 'none' }} />
-        <div style={{ color: data.isExpanded ? '#c4b5fd' : '#7c3aed', flexShrink: 0 }}>
+        <div style={{ color: data.isExpanded ? '#ededed' : '#888888', flexShrink: 0 }}>
             <FolderIcon open={data.isExpanded} />
         </div>
         <span style={{
-            fontSize: 11, color: '#d8c9f5', fontWeight: 500,
+            fontSize: 11, color: '#ededed', fontWeight: 500,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             flex: 1, letterSpacing: '0.01em',
         }}>
             {data.label}
         </span>
         {data.hasChildren && (
-            <span style={{ fontSize: 9, color: data.isExpanded ? '#5b3fa0' : '#3b2870', flexShrink: 0 }}>
+            <span style={{ fontSize: 9, color: data.isExpanded ? '#888' : '#555', flexShrink: 0 }}>
                 {data.isExpanded ? '▾' : '▸'}
             </span>
         )}
@@ -279,12 +279,12 @@ const FileNode = ({ data, selected }) => {
         <div style={{
             width: NODE_W, height: NODE_H,
             background: selected ? '#0e0e0e' : '#070707',
-            border: `1px solid ${selected ? '#2a2a2a' : '#131313'}`,
-            borderLeft: `2px solid ${accentColor}22`,
+            border: `1px solid ${selected ? '#333333' : '#1a1a1a'}`,
+            borderLeft: `2px solid ${accentColor}44`,
             borderRadius: 7,
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '0 10px', cursor: 'default',
-            boxShadow: selected ? `0 0 0 1px ${accentColor}18` : 'none',
+            boxShadow: 'none',
             transition: 'all 0.15s ease',
             fontFamily: '"Geist Mono", "JetBrains Mono", monospace',
             position: 'relative',
@@ -295,7 +295,7 @@ const FileNode = ({ data, selected }) => {
             <Handle type="target" position={Position.Right}  style={{ opacity: 0, pointerEvents: 'none' }} />
             <div style={{ flexShrink: 0 }}>{getFileIcon(data.label)}</div>
             <span style={{
-                fontSize: 11, color: '#777',
+                fontSize: 11, color: '#ededed', fontWeight: 500,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 flex: 1, letterSpacing: '0.01em',
             }}>
@@ -338,10 +338,10 @@ const SearchBar = ({ nodes, onFocus }) => {
         <div style={{ position: 'relative', width: 240 }}>
             <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                background: '#0a0812', border: '1px solid #2a1f42',
+                background: '#0a0a0a', border: '1px solid #333333',
                 borderRadius: 8, padding: '6px 10px',
             }}>
-                <svg width="12" height="12" fill="none" stroke="#4c2e8a" strokeWidth="2" viewBox="0 0 24 24">
+                <svg width="12" height="12" fill="none" stroke="#888888" strokeWidth="2" viewBox="0 0 24 24">
                     <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
@@ -352,14 +352,14 @@ const SearchBar = ({ nodes, onFocus }) => {
                     placeholder="Search files..."
                     style={{
                         background: 'transparent', border: 'none', outline: 'none',
-                        color: '#c4b5fd', fontSize: 11, fontFamily: 'inherit', width: '100%',
+                        color: '#ededed', fontSize: 11, fontFamily: 'inherit', width: '100%',
                     }}
                 />
             </div>
             {open && results.length > 0 && (
                 <div style={{
                     position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                    background: '#0a0812', border: '1px solid #2a1f42', borderRadius: 8,
+                    background: '#0a0a0a', border: '1px solid #333333', borderRadius: 8,
                     overflow: 'hidden', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.9)',
                 }}>
                     {results.map(n => (
@@ -370,18 +370,18 @@ const SearchBar = ({ nodes, onFocus }) => {
                                 padding: '6px 12px', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', gap: 8,
                                 fontSize: 11, color: '#888', fontFamily: 'inherit',
-                                borderBottom: '1px solid #160f24',
+                                borderBottom: '1px solid #1a1a1a',
                             }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#130d1f'}
+                            onMouseEnter={e => e.currentTarget.style.background = '#111111'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
                             {n.type === 'folderNode'
-                                ? <span style={{ color: '#7c3aed' }}><FolderIcon /></span>
+                                ? <span style={{ color: '#888888' }}><FolderIcon /></span>
                                 : getFileIcon(n.data.label)}
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#bbb' }}>
                                 {n.data.label}
                             </span>
-                            <span style={{ color: '#3b2870', fontSize: 9, marginLeft: 'auto' }}>
+                            <span style={{ color: '#555', fontSize: 9, marginLeft: 'auto' }}>
                                 {n.type === 'folderNode' ? 'dir' : ''}
                             </span>
                         </div>
@@ -399,11 +399,11 @@ const StatsBar = ({ nodes }) => {
     const files   = nodes.filter(n => n.type === 'fileNode').length;
     return (
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: '#3b2870', fontFamily: 'monospace' }}>
-                <span style={{ color: '#7c3aed' }}>{folders}</span> dirs
+            <span style={{ fontSize: 10, color: '#555', fontFamily: 'monospace' }}>
+                <span style={{ color: '#888' }}>{folders}</span> dirs
             </span>
-            <span style={{ fontSize: 10, color: '#3b2870', fontFamily: 'monospace' }}>
-                <span style={{ color: '#4a4a5a' }}>{files}</span> files
+            <span style={{ fontSize: 10, color: '#555', fontFamily: 'monospace' }}>
+                <span style={{ color: '#555' }}>{files}</span> files
             </span>
         </div>
     );
@@ -462,15 +462,15 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
 
     if (loading) {
         return (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#030208' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000000' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                     <div style={{
-                        width: 28, height: 28, border: '2px solid #2a1f42',
-                        borderTop: '2px solid #7c3aed', borderRadius: '50%',
+                        width: 28, height: 28, border: '2px solid #333333',
+                        borderTop: '2px solid #ededed', borderRadius: '50%',
                         animation: 'spin 0.9s linear infinite',
                     }} />
-                    <span style={{ color: '#3b2870', fontSize: 11, fontFamily: 'monospace', letterSpacing: '0.08em' }}>
-                        blooming repository...
+                    <span style={{ color: '#555555', fontSize: 11, fontFamily: 'monospace', letterSpacing: '0.08em' }}>
+                        loading repository...
                     </span>
                 </div>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -480,17 +480,17 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
 
     if (error || !repoData) {
         return (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#030208' }}>
-                <div style={{ textAlign: 'center', padding: 32, border: '1px solid #1e1425', borderRadius: 12 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000000' }}>
+                <div style={{ textAlign: 'center', padding: 32, border: '1px solid #2a0a0a', borderRadius: 12 }}>
                     <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>Error loading repository</p>
-                    <p style={{ color: '#3b2870', fontSize: 11, fontFamily: 'monospace' }}>{error}</p>
+                    <p style={{ color: '#555555', fontSize: 11, fontFamily: 'monospace' }}>{error}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div style={{ flex: 1, position: 'relative', background: '#030208' }}>
+        <div style={{ flex: 1, position: 'relative', background: '#000000' }}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -502,21 +502,21 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
                 minZoom={0.04}
                 maxZoom={3}
                 proOptions={{ hideAttribution: true }}
-                style={{ background: '#030208' }}
+                style={{ background: '#000000' }}
             >
                 <Panel position="top-left" style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '12px 16px' }}>
                     <SearchBar nodes={nodes} onFocus={focusNode} />
                     <StatsBar nodes={nodes} />
                 </Panel>
                 <Panel position="bottom-left" style={{ margin: '0 16px 12px' }}>
-                    <span style={{ fontSize: 10, color: '#1e1425', fontFamily: 'monospace' }}>
-                        click folders to bloom · scroll to zoom · drag to pan
+                    <span style={{ fontSize: 10, color: '#333333', fontFamily: 'monospace' }}>
+                        click folders to expand · scroll to zoom · drag to pan
                     </span>
                 </Panel>
-                <Background color="#120d1c" gap={36} size={1} variant="dots" />
+                <Background color="#111111" gap={36} size={1} variant="dots" />
                 <Controls
                     style={{
-                        background: '#0a0812', border: '1px solid #2a1f42',
+                        background: '#0a0a0a', border: '1px solid #333333',
                         borderRadius: 8, overflow: 'hidden',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.8)',
                     }}
@@ -524,15 +524,15 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
                 />
                 <MiniMap
                     style={{
-                        background: '#060410', border: '1px solid #1e1425',
+                        background: '#0a0a0a', border: '1px solid #333333',
                         borderRadius: 8, overflow: 'hidden',
                     }}
                     nodeColor={n => {
-                        if (n.type === 'rootNode') return '#7c3aed';
-                        if (n.type === 'folderNode') return '#3b2870';
-                        return '#1a1425';
+                        if (n.type === 'rootNode') return '#ededed';
+                        if (n.type === 'folderNode') return '#444444';
+                        return '#1a1a1a';
                     }}
-                    maskColor="rgba(3,2,8,0.75)"
+                    maskColor="rgba(0,0,0,0.75)"
                 />
             </ReactFlow>
         </div>
@@ -568,46 +568,46 @@ const RepoDetailsPage = () => {
     return (
         <div style={{
             height: '100vh', width: '100%',
-            background: '#030208', color: '#fff',
+            background: '#000000', color: '#ededed',
             display: 'flex', flexDirection: 'column',
-            fontFamily: '"Geist Mono", "JetBrains Mono", "Fira Code", monospace',
+            fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
         }}>
             {/* Header */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '0 20px', height: 48,
-                borderBottom: '1px solid #120d1c',
-                background: '#030208', flexShrink: 0, zIndex: 10,
+                borderBottom: '1px solid #333333',
+                background: '#000000', flexShrink: 0, zIndex: 10,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
                         onClick={() => navigate('/repos')}
                         style={{
                             background: 'transparent', border: 'none', cursor: 'pointer',
-                            color: '#3b2870', padding: 6, borderRadius: 6,
+                            color: '#888888', padding: 6, borderRadius: 6,
                             display: 'flex', alignItems: 'center', transition: 'color 0.15s',
                         }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#7c3aed'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#3b2870'}
+                        onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#888888'}
                         title="Back to Repos"
                     >
                         <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                     </button>
-                    <div style={{ width: 1, height: 16, background: '#1e1425' }} />
+                    <div style={{ width: 1, height: 16, background: '#333333' }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#7c3aed" style={{ opacity: 0.7 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#ededed" style={{ opacity: 0.7 }}>
                             <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
                         </svg>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#c4b5fd', letterSpacing: '0.02em' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#ededed', letterSpacing: '0.02em' }}>
                             {repoData ? ((repoData.repo.name || '').split('/')[1] || repoData.repo.name) : '—'}
                         </span>
                     </div>
                     {repoData?.active_branch?.name && (
                         <>
-                            <div style={{ width: 1, height: 12, background: '#1e1425' }} />
-                            <span style={{ fontSize: 11, color: '#3b2870', letterSpacing: '0.03em' }}>
+                            <div style={{ width: 1, height: 12, background: '#333333' }} />
+                            <span style={{ fontSize: 11, color: '#888888', letterSpacing: '0.03em' }}>
                                 {repoData.active_branch.name}
                             </span>
                         </>
@@ -615,17 +615,17 @@ const RepoDetailsPage = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     {repoData?.active_branch?.updated_at && (
-                        <span style={{ fontSize: 10, color: '#2a1f42', letterSpacing: '0.03em' }}>
+                        <span style={{ fontSize: 10, color: '#555555', letterSpacing: '0.03em' }}>
                             updated {new Date(repoData.active_branch.updated_at).toLocaleDateString()}
                         </span>
                     )}
                     {repoData?.branches && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 10, color: '#2a1f42' }}>branch</span>
+                            <span style={{ fontSize: 10, color: '#555555' }}>branch</span>
                             <select
                                 style={{
-                                    background: '#0a0812', border: '1px solid #2a1f42',
-                                    color: '#7c3aed', fontSize: 11, borderRadius: 6,
+                                    background: '#0a0a0a', border: '1px solid #333333',
+                                    color: '#ededed', fontSize: 11, borderRadius: 6,
                                     padding: '3px 8px', outline: 'none', cursor: 'pointer',
                                     fontFamily: 'inherit',
                                 }}
