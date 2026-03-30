@@ -161,7 +161,7 @@ class RepoManager:
     
     def get_active_devs(self, owner: str, repo_name: str, branch: str, inactivity_threshold: int = 900) -> dict:
         """
-        Returns active developers grouped by branch and file.
+        returns a snapshot containing active developers grouped by branch and file
         """
         repo_key = owner + "/" + repo_name
         if repo_key not in self.repos:
