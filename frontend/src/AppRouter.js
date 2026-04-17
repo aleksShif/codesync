@@ -11,7 +11,7 @@ const PrivateRoute = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = React.useState(null);
 
     React.useEffect(() => {
-        api.get('/user/repos')
+        api.get('user/repos')
             .then(() => setIsLoggedIn(true))
             .catch(() => setIsLoggedIn(false));
     }, []);

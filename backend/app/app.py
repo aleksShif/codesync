@@ -18,13 +18,16 @@ from .StateTracker import repo_manager
 app = FastAPI()
 app.add_middleware(AuthMiddleware)
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+FRONT_URL = os.getenv("FRONT_URL", "http://localhost:3000")
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
-    ],  
+    allow_origins=[FRONT_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
