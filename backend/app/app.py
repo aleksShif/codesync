@@ -5,6 +5,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .StateTracker.RepoManager import RepoManager
+from .StateTracker.ActivityFeed import ActivityFeed
 from .StateTracker.GithubAPI import File
 from .StateTracker.FileStates import PatchEvent
 from .utls import parse_update
@@ -15,7 +16,7 @@ from app.routes import activity
 from .db.db import create_all_tables
 from app.middleware.auth_middleware import AuthMiddleware, get_current_user_ws
 
-from .StateTracker import repo_manager
+from .StateTracker import repo_manager, activity_feed
 
 app = FastAPI()
 app.add_middleware(AuthMiddleware)
@@ -158,6 +159,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
         await activity_feed.publish(sub_key, {
             "type": "activity_snapshot",
             "repo": f"{file.owner}/{file.repo}",
+            "branch": patch.branch,
             "active_devs": snapshot
         })
 

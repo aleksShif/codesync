@@ -17,7 +17,7 @@ async def _get_repo_key(repo_id: int, user_id: int) -> str | None:
         from sqlalchemy import select
         result = await db.execute(
             select(Repository)
-            .join(UserAccess, Repository.repository_id == UserAccess.c.repo_id)
+            .join(UserAccess, Repository.repository_id == UserAccess.c.repository_id)
             .where(
                 UserAccess.c.user_id == user_id,
                 Repository.repository_id == repo_id

@@ -146,6 +146,7 @@ const TreeNode = ({ node, level, expandedFolders, toggleFolder }) => {
 
 
 const RepoDetailsPage = () => {
+    console.log('Starting'); 
     const { repoId } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -161,6 +162,7 @@ const RepoDetailsPage = () => {
     const [fileTree, setFileTree] = useState(null);
 
     useEffect(() => {
+        console.log('Starting 2'); 
         if (!repoData) return; // wait for data to load first
 
         const branch = repoData.active_branch?.name;
