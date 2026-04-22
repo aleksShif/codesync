@@ -7,6 +7,7 @@ from .FileStates import PatchEvent
 from .GithubAPI import GithubAPI, File
 from collections import defaultdict
 from intervaltree import IntervalTree, Interval
+from datetime import datetime, timezone
 
 
 class Repo:
@@ -368,6 +369,38 @@ class RepoManager:
             for ival in intervals_to_remove:
                 tree.discard(ival)
             repo.dev_intervals[dev_id][branch][file_path].clear()
+<<<<<<< HEAD
             
         repo.last_activity = time.time()
         repo.is_dirty = True
+=======
+    
+    def get_active_devs(self, owner: str, repo_name: str, branch: str, inactivity_threshold: int = 900) -> dict:
+        """
+        returns a snapshot containing active developers grouped by branch and file
+        """
+        repo_key = owner + "/" + repo_name
+        if repo_key not in self.repos:
+            return {}
+
+        repo = self.repos[repo_key]
+        now = datetime.now(timezone.utc).timestamp()
+        result = {}
+
+        for dev_id, branches in repo.dev_intervals.items():
+            if dev_id == "github-commit":
+                continue
+            files = branches.get(branch, {})
+            for file_path, intervals in files.items():
+                if not intervals:
+                    continue
+                last_save = max(ival.data.timestamp for ival in intervals)
+                if now - last_save > inactivity_threshold:
+                    continue
+                result.setdefault(branch, {}).setdefault(file_path, []).append({
+                    "dev_id": dev_id,
+                    "last_save": last_save
+                })
+
+        return result
+>>>>>>> backend-sse

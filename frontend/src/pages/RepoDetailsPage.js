@@ -779,6 +779,38 @@ const RepoDetailsPage = () => {
     const [branchHealth, setBranchHealth] = useState(null);
     const [healthLoading, setHealthLoading] = useState(false);
 
+    
+    useEffect(() => {
+        console.log('Starting 2'); 
+        if (!repoData) return; // wait for data to load first
+
+        const branch = repoData.active_branch?.name;
+        if (!branch) return;
+
+        console.log('Setting up SSE for repo:', repoId, 'branch:', branch);
+
+        
+        const eventSource = new EventSource(
+            `http://localhost:8000/activity/repos/${repoId}/stream/${branch}`,
+            { withCredentials: true } // sends the auth cookie
+        );
+
+        eventSource.onopen = () => {
+            console.log('SSE connection opened');
+        };
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Activity snapshot received:', data);
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('SSE error:', err);
+        };
+
+        return () => eventSource.close(); // cleanup on unmount
+    }, [repoData, repoId]);
+
     useEffect(() => {
         setLoading(true);
         getRepoDetails(repoId, branchParam)
