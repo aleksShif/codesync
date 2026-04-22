@@ -14,7 +14,7 @@ import { ROOT_R, FOLDER_W, NODE_W, FOLDER_H, NODE_H } from '../../constants/flow
 const nodeTypes = { rootNode: RootNode, folderNode: FolderNode, fileNode: FileNode };
 const edgeTypes = { floralEdge: FloralEdge };
 
-const FlowInner = ({ fileTree, repoData, loading, error }) => {
+const FlowInner = ({ fileTree, repoData, loading, error, activeDevs = {} }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -40,6 +40,28 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
     }, []);
 
     useEffect(() => {
+        if (!fileTree) return;
+        const { nodes: rawNodes, edges: rawEdges } = generateGraph(fileTree, expandedFolders);
+        
+        const enrichedNodes = rawNodes.map(n => {
+            const baseData = { ...n.data };
+            if (n.type === 'folderNode') {
+                baseData.onToggle = toggleFolder;
+            }
+            // INJECT VIEWERS HERE: n.id matches the file path (e.g., 'src/app.js')
+            if (n.type === 'fileNode') {
+                baseData.activeViewers = activeDevs[n.id] || [];
+            }
+            return { ...n, data: baseData };
+        });
+
+        const layouted = applyForceLayout(enrichedNodes, rawEdges);
+        setNodes(layouted);
+        setEdges(rawEdges);
+        setTimeout(() => fitView({ padding: 0.18, duration: 500 }), 60);
+    }, [fileTree, expandedFolders, toggleFolder, setNodes, setEdges, fitView, activeDevs]); // <-- Add activeDevs to dependencies
+
+    useEffect(() => {
         if (!fileTree || initialized.current) return;
         initialized.current = true;
         const initial = new Set();
@@ -49,19 +71,63 @@ const FlowInner = ({ fileTree, repoData, loading, error }) => {
         setExpandedFolders(initial);
     }, [fileTree]);
 
+    // ---------------------------------------------------------
+    // EFFECT 1: Graph Structure & Layout
+    // Runs ONLY when the file tree or expanded folders change.
+    // Calculates the heavy D3 force layout.
+    // ---------------------------------------------------------
     useEffect(() => {
         if (!fileTree) return;
         const { nodes: rawNodes, edges: rawEdges } = generateGraph(fileTree, expandedFolders);
+        
         const enrichedNodes = rawNodes.map(n =>
             n.type === 'folderNode'
                 ? { ...n, data: { ...n.data, onToggle: toggleFolder } }
                 : n
         );
+        
+        // Run the heavy D3 math to get x/y positions
         const layouted = applyForceLayout(enrichedNodes, rawEdges);
-        setNodes(layouted);
+        
+        // Inject whatever presence data we currently have so it paints instantly
+        const finalNodes = layouted.map(n => {
+            if (n.type === 'fileNode') {
+                return { ...n, data: { ...n.data, activeViewers: activeDevs[n.id] || [] } };
+            }
+            return n;
+        });
+
+        setNodes(finalNodes);
         setEdges(rawEdges);
         setTimeout(() => fitView({ padding: 0.18, duration: 500 }), 60);
-    }, [fileTree, expandedFolders, toggleFolder, setNodes, setEdges, fitView]);
+        
+        // We intentionally omit `activeDevs` from this dependency array
+        // so real-time presence updates don't force the graph to rebuild and jump.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fileTree, expandedFolders, toggleFolder, setNodes, setEdges, fitView]); 
+
+    // ---------------------------------------------------------
+    // EFFECT 2: Real-Time Presence Updates
+    // Runs when the activeDevs (SSE stream) updates.
+    // Updates node data directly without changing x/y positions.
+    // ---------------------------------------------------------
+    useEffect(() => {
+        setNodes((currentNodes) =>
+            currentNodes.map((n) => {
+                if (n.type === 'fileNode') {
+                    // Update the activeViewers payload silently
+                    return { 
+                        ...n, 
+                        data: { 
+                            ...n.data, 
+                            activeViewers: activeDevs[n.id] || [] 
+                        } 
+                    };
+                }
+                return n;
+            })
+        );
+    }, [activeDevs, setNodes]);
 
     if (loading) {
         return (

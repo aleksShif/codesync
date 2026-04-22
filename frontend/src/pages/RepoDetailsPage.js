@@ -8,6 +8,25 @@ import BranchHealthBar from '../components/ui/BranchHealthBar';
 import { buildTree } from '../utils/graphHelpers';
 import { useActiveViewers } from '../hooks/useActiveViewers';
 import { ViewerStack } from '../components/ui/ViewerStack';
+// ... existing imports ...
+import { useBranchActivity } from '../hooks/useBranchActivity'; // <-- New Import
+
+const MOCK_DEVS = {
+    'gallery.html': [
+        { dev_id: 'Alex', last_save: Date.now() },
+        { dev_id: 'Sam', last_save: Date.now() }
+    ],
+    'gallery.js': [
+        { dev_id: 'Taylor', last_save: Date.now() }
+    ],
+    'about.html': [
+        { dev_id: 'Jordan', last_save: Date.now() },
+        { dev_id: 'Casey', last_save: Date.now() },
+        { dev_id: 'Morgan', last_save: Date.now() },
+        { dev_id: 'Riley', last_save: Date.now() },
+        { dev_id: 'Quinn', last_save: Date.now() }
+    ]
+};
 
 const RepoDetailsPage = () => {
     const { repoId } = useParams();
@@ -21,10 +40,21 @@ const RepoDetailsPage = () => {
     const [fileTree, setFileTree] = useState(null);
     const [branchHealth, setBranchHealth] = useState(null);
     const [healthLoading, setHealthLoading] = useState(false);
-    const [activeFileId, setActiveFileId] = useState('file_src_app_js');
 
-    // This will automatically update when the file changes
-    const activeUsers = useActiveViewers(activeFileId);
+    // ... existing state ...
+    const activeBranchName = repoData?.active_branch?.name;
+    
+    // Hook into the SSE stream
+    const activeDevs = MOCK_DEVS //useBranchActivity(repoId, activeBranchName);
+
+    // Compute unique developers active across the ENTIRE branch for the header
+    const uniqueBranchViewers = React.useMemo(() => {
+        const unique = new Map();
+        Object.values(activeDevs).forEach(devArray => {
+            devArray.forEach(dev => unique.set(dev.dev_id, dev));
+        });
+        return Array.from(unique.values());
+    }, [activeDevs]);
 
     useEffect(() => {
         setLoading(true);
@@ -104,7 +134,7 @@ const RepoDetailsPage = () => {
                     )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <ViewerStack users={activeUsers} />
+                    <ViewerStack users={uniqueBranchViewers} />
                     <div style={{ width: 1, height: 16, background: '#333333' }} />
                     {repoData?.active_branch?.updated_at && (
                         <span style={{ fontSize: 10, color: '#555555', letterSpacing: '0.03em' }}>
@@ -141,6 +171,7 @@ const RepoDetailsPage = () => {
                     repoData={repoData}
                     loading={loading}
                     error={error}
+                    activeDevs={activeDevs}
                 />
             </ReactFlowProvider>
         </div>
