@@ -161,9 +161,13 @@ const RepoDetailsPage = () => {
     const [fileTree, setFileTree] = useState(null);
 
     useEffect(() => {
-        console.log('useEffect running, setting up SSE');
-        const repoId = 1; // hardcode for testing
-        const branch = 'main'; // hardcode for testing
+        if (!repoData) return; // wait for data to load first
+
+        const branch = repoData.active_branch?.name;
+        if (!branch) return;
+
+        console.log('Setting up SSE for repo:', repoId, 'branch:', branch);
+
         
         const eventSource = new EventSource(
             `http://localhost:8000/activity/repos/${repoId}/stream/${branch}`,
@@ -184,7 +188,7 @@ const RepoDetailsPage = () => {
         };
 
         return () => eventSource.close(); // cleanup on unmount
-    }, []);
+    }, [repoData]);
     // Fetch data
     useEffect(() => {
         setLoading(true);
