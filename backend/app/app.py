@@ -2,7 +2,7 @@ import json
 import logging
 import time
 import asyncio
-import asyncio
+from datetime import datetime, timezone
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .StateTracker.RepoManager import RepoManager
@@ -40,8 +40,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     await create_all_tables()
-    asyncio.create_task(periodic_activity_push())    
     asyncio.create_task(sync_inactive_repos_task())
+    asyncio.create_task(periodic_activity_push())    
 
 async def sync_inactive_repos_task():
     """Background task that saves inactive repositories to the database."""
@@ -49,7 +49,7 @@ async def sync_inactive_repos_task():
     while True:
         try:
             # 5 minutes threshold
-            inactive_repos = await repo_manager.get_inactive_dirty_repos(threshold_seconds=300)
+            inactive_repos = await repo_manager.get_inactive_dirty_repos(threshold_seconds=5)
             for repo_name in inactive_repos:
                 async with AsyncSessionLocal() as db:
                     await repo_manager.save_repo_to_db(db, repo_name)
