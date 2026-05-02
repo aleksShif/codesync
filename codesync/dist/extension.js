@@ -103,16 +103,16 @@ async function activate(context) {
         owner = parsed.owner;
         repoName = parsed.repoName;
         currentBranch = repo.branch;
+        await socketClient.connect(token, owner, repoName, repo.branch);
         // Send initial branch update to register with backend
         console.log('DEBUG: Sending initial branch_update for', owner, '/', repoName);
-        socketClient.sendBranchUpdate(devId, owner, repoName, '', // No old branch
-        repo.branch, '', // No old hash
+        socketClient.sendBranchUpdate(devId, owner, repoName, '', // removed old branch arg
+        repo.branch, '', // removed old hash arg
         baseCommitHash);
         // Initial re-sync
         if (baseCommitHash) {
             await syncRepositoryState(repo.path, owner, repoName, repo.branch, baseCommitHash);
         }
-        await socketClient.connect(token, owner, repoName, repo.branch);
         const watcher = new fileWatcher_1.FileWatcher(async (event) => {
             console.log('DEBUG: FileWatcher event:', event.type, 'Path:', event.filePath, 'BaseHash:', baseCommitHash);
             if (event.type === 'save') {
@@ -528,14 +528,14 @@ async function computeDiff(filePath, repoPath) {
             return null;
         const repo = git.repositories.find((r) => r.rootUri.fsPath === repoPath);
         if (!repo) {
-            console.warn('DEBUG: computeDiff - Repo path mismatch:', repoPath);
+            console.warn('DEBUG: computeDiff, Repo path mismatch:', repoPath);
             return null;
         }
-        // Handle both relative and absolute paths safely
+        // this is to handle both relative and absolute paths
         const absolutePath = filePath.startsWith('/') || filePath.includes(':')
             ? vscode.Uri.file(filePath)
             : vscode.Uri.file(`${repoPath}/${filePath}`);
-        console.log('DEBUG: computeDiff - Computing diff for:', absolutePath.fsPath);
+        console.log('DEBUG: computeDiff, Computing diff for:', absolutePath.fsPath);
         const diff = await repo.diffWithHEAD(absolutePath.fsPath);
         return diff || null;
     }
@@ -689,8 +689,16 @@ class SocketClient {
         switch (msg.type) {
             case 'patch_update':
                 if (msg.conflict) {
-                    vscode.window.showWarningMessage(`CodeSync: Conflict detected — another developer has overlapping changes.`);
-                    console.log('Conflicting patches:', msg.conflicting_patches);
+                    const lines = msg.conflicting_dev_lines?.join(', ') || 'unknown';
+                    vscode.window.showWarningMessage(`CodeSync: Conflict detected — another developer is editing overlapping lines (${lines}).`);
+                    console.log('Conflicting lines:', msg.conflicting_dev_lines);
+                }
+                if (msg.cross_branch_live_files && msg.cross_branch_live_files.length > 0) {
+                    const files = msg.cross_branch_live_files.join(', ');
+                    vscode.window.showWarningMessage(`CodeSync: A developer on the main branch is also editing: ${files}`);
+                }
+                if (msg.outdated) {
+                    vscode.window.showWarningMessage(`CodeSync: Your local changes are outdated. Please pull the latest changes.`);
                 }
                 break;
             case 'branch_update':
