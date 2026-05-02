@@ -8,8 +8,7 @@ import BranchHealthBar from '../components/ui/BranchHealthBar';
 import { buildTree } from '../utils/graphHelpers';
 import { useActiveViewers } from '../hooks/useActiveViewers';
 import { ViewerStack } from '../components/ui/ViewerStack';
-// ... existing imports ...
-import { useBranchActivity } from '../hooks/useBranchActivity'; // <-- New Import
+import { useBranchActivity } from '../hooks/useBranchActivity';
 
 const MOCK_DEVS = {
     'gallery.html': [

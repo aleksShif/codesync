@@ -3,7 +3,6 @@ import { Handle, Position } from 'reactflow';
 import { NODE_W, NODE_H } from '../../../constants/flowConstants';
 import { getFileColor, getFileIcon } from '../../../utils/iconHelpers';
 
-// Distinct, vibrant colors for the multiplayer cursors
 const CURSOR_COLORS = [
     '#a855f7', // Nuclear Purple
     '#3b82f6', // Bright Blue
@@ -18,7 +17,6 @@ const FileNode = ({ data, selected }) => {
     const accentColor = getFileColor(data.label);
     const viewers = data.activeViewers || [];
 
-    // Renders up to 6 users evenly distributed around the node's perimeter
     const renderSurroundingCursors = () => {
         if (viewers.length === 0) return null;
 
