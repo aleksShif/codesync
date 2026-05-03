@@ -6,26 +6,25 @@ import { getRepoDetails, getBranchHealth } from '../api';
 import FlowInner from '../components/flow/FlowInner';
 import BranchHealthBar from '../components/ui/BranchHealthBar';
 import { buildTree } from '../utils/graphHelpers';
-import { useActiveViewers } from '../hooks/useActiveViewers';
 import { ViewerStack } from '../components/ui/ViewerStack';
 import { useBranchActivity } from '../hooks/useBranchActivity';
 
-const MOCK_DEVS = {
-    'gallery.html': [
-        { dev_id: 'Alex', last_save: Date.now() },
-        { dev_id: 'Sam', last_save: Date.now() }
-    ],
-    'gallery.js': [
-        { dev_id: 'Taylor', last_save: Date.now() }
-    ],
-    'about.html': [
-        { dev_id: 'Jordan', last_save: Date.now() },
-        { dev_id: 'Casey', last_save: Date.now() },
-        { dev_id: 'Morgan', last_save: Date.now() },
-        { dev_id: 'Riley', last_save: Date.now() },
-        { dev_id: 'Quinn', last_save: Date.now() }
-    ]
-};
+// const MOCK_DEVS = {
+//     'gallery.html': [
+//         { dev_id: 'Alex', last_save: Date.now() },
+//         { dev_id: 'Sam', last_save: Date.now() }
+//     ],
+//     'gallery.js': [
+//         { dev_id: 'Taylor', last_save: Date.now() }
+//     ],
+//     'about.html': [
+//         { dev_id: 'Jordan', last_save: Date.now() },
+//         { dev_id: 'Casey', last_save: Date.now() },
+//         { dev_id: 'Morgan', last_save: Date.now() },
+//         { dev_id: 'Riley', last_save: Date.now() },
+//         { dev_id: 'Quinn', last_save: Date.now() }
+//     ]
+// };
 
 const RepoDetailsPage = () => {
     const { repoId } = useParams();
@@ -44,7 +43,7 @@ const RepoDetailsPage = () => {
     const activeBranchName = repoData?.active_branch?.name;
     
     // Hook into the SSE stream
-    const activeDevs = MOCK_DEVS //useBranchActivity(repoId, activeBranchName);
+    const activeDevs = useBranchActivity(repoId, activeBranchName);
 
     // Compute unique developers active across the ENTIRE branch for the header
     const uniqueBranchViewers = React.useMemo(() => {
