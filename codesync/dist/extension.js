@@ -42,6 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(__webpack_require__(1));
+const path = __importStar(__webpack_require__(30));
 const auth_1 = __webpack_require__(2);
 const fileWatcher_1 = __webpack_require__(3);
 const git_1 = __webpack_require__(4);
@@ -81,8 +82,9 @@ async function activate(context) {
             for (const filePath of modifiedFiles) {
                 const patch = await (0, git_1.computeDiff)(filePath, repoPath);
                 if (patch) {
-                    console.log(`DEBUG: Sending patch for ${filePath} on branch ${branch}`);
-                    socketClient.sendPatchUpdate(devId, owner, repo, branch, filePath, hash, patch);
+                    const relativePath = path.relative(repoPath, filePath);
+                    console.log(`DEBUG: Sending patch for ${relativePath} on branch ${branch}`);
+                    socketClient.sendPatchUpdate(devId, owner, repo, branch, relativePath, hash, patch);
                 }
             }
         }
@@ -92,7 +94,7 @@ async function activate(context) {
     }
     await (0, git_1.monitorGitRepository)(async (repo) => {
         // Initial setup for the detected repository
-        baseCommitHash = (0, git_1.getCurrentCommitHash)();
+        baseCommitHash = (0, git_1.getCurrentCommitHash)(repo.path);
         statusBar.text = `$(git-branch) CodeSync: ${repo.branch}`;
         vscode.window.showInformationMessage(`CodeSync: Monitoring ${repo.remoteUrl}`);
         const parsed = (0, git_1.parseRemoteUrl)(repo.remoteUrl);
@@ -129,15 +131,16 @@ async function activate(context) {
                 }
                 const patch = await (0, git_1.computeDiff)(event.filePath, repo.path);
                 if (patch) {
-                    console.log('DEBUG: Calling sendPatchUpdate (edit) for', event.filePath);
-                    socketClient.sendPatchUpdate(devId, owner, repoName, currentBranch, event.filePath, baseCommitHash, patch);
+                    const relativePath = path.relative(repo.path, event.filePath);
+                    console.log('DEBUG: Calling sendPatchUpdate (edit) for', relativePath);
+                    socketClient.sendPatchUpdate(devId, owner, repoName, currentBranch, relativePath, baseCommitHash, patch);
                 }
             }
         });
         context.subscriptions.push({ dispose: () => watcher.dispose() });
     }, async (repo) => {
         console.log('DEBUG: onRepoChanged called. Branch:', repo.branch, 'Current:', currentBranch);
-        const newCommitHash = (0, git_1.getCurrentCommitHash)();
+        const newCommitHash = (0, git_1.getCurrentCommitHash)(repo.path);
         if (repo.branch != currentBranch) {
             console.log('DEBUG: Branch switch detected:', currentBranch, '->', repo.branch);
             const oldBranch = currentBranch;
@@ -328,7 +331,7 @@ class FileWatcher {
     setupWatchers() {
         // to detect a file being edited
         vscode.workspace.onDidChangeTextDocument((e) => {
-            const filePath = vscode.workspace.asRelativePath(e.document.uri);
+            const filePath = e.document.uri.fsPath;
             if (this.shouldIgnore(filePath))
                 return;
             // to extract changed lines
@@ -342,14 +345,14 @@ class FileWatcher {
         });
         // to detect a file being saved
         vscode.workspace.onDidSaveTextDocument((doc) => {
-            const filePath = vscode.workspace.asRelativePath(doc.uri);
+            const filePath = doc.uri.fsPath;
             if (!this.shouldIgnore(filePath)) {
                 this.onFileChange({ type: 'save', filePath, timestamp: new Date().toISOString() });
             }
         });
         // to detect a file being closed
         vscode.workspace.onDidCloseTextDocument((doc) => {
-            const filePath = vscode.workspace.asRelativePath(doc.uri);
+            const filePath = doc.uri.fsPath;
             if (!this.shouldIgnore(filePath)) {
                 this.onFileChange({ type: 'close', filePath, timestamp: new Date().toISOString() });
             }
@@ -357,7 +360,7 @@ class FileWatcher {
         // to detect a file being opened
         vscode.window.onDidChangeActiveTextEditor((editor) => {
             if (editor) {
-                const filePath = vscode.workspace.asRelativePath(editor.document.uri);
+                const filePath = editor.document.uri.fsPath;
                 if (!this.shouldIgnore(filePath)) {
                     this.onFileChange({
                         type: 'open',
@@ -494,11 +497,16 @@ async function monitorGitRepository(onRepoDetected, onRepoChanged) {
         });
     });
 }
-function getCurrentCommitHash() {
+function getCurrentCommitHash(repoPath) {
     const gitExtension = vscode.extensions.getExtension('vscode.git');
     if (!gitExtension)
         return;
     const git = gitExtension?.exports.getAPI(1);
+    if (repoPath) {
+        const repo = git.repositories.find((r) => r.rootUri.fsPath === repoPath);
+        if (repo)
+            return repo.state.HEAD?.commit;
+    }
     return git?.repositories[0]?.state.HEAD?.commit;
 }
 function parseRemoteUrl(remoteUrl) {
@@ -518,7 +526,7 @@ function parseRemoteUrl(remoteUrl) {
         return null;
     }
 }
-async function computeDiff(filePath, repoPath) {
+async function computeDiff(absoluteFilePath, repoPath) {
     try {
         const gitExtension = vscode.extensions.getExtension('vscode.git');
         if (!gitExtension)
@@ -531,10 +539,7 @@ async function computeDiff(filePath, repoPath) {
             console.warn('DEBUG: computeDiff, Repo path mismatch:', repoPath);
             return null;
         }
-        // this is to handle both relative and absolute paths
-        const absolutePath = filePath.startsWith('/') || filePath.includes(':')
-            ? vscode.Uri.file(filePath)
-            : vscode.Uri.file(`${repoPath}/${filePath}`);
+        const absolutePath = vscode.Uri.file(absoluteFilePath);
         console.log('DEBUG: computeDiff, Computing diff for:', absolutePath.fsPath);
         const diff = await repo.diffWithHEAD(absolutePath.fsPath);
         return diff || null;
@@ -560,9 +565,7 @@ async function getModifiedFiles(repoPath) {
         ];
         const paths = new Set();
         changes.forEach((change) => {
-            // Store as relative path for consistency with other parts of the app
-            const relPath = vscode.workspace.asRelativePath(change.uri);
-            paths.add(relPath);
+            paths.add(change.uri.fsPath);
         });
         return Array.from(paths);
     }
@@ -615,8 +618,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SocketClient = void 0;
 const WebSocket = __webpack_require__(6);
 const vscode = __importStar(__webpack_require__(1));
-const SERVER_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000';
+const SERVER_URL = 'http://localhost:8000'; //https://api.codesink.app'// 
+const WS_URL = 'ws://localhost:8000'; //'wss://api.codesink.app' //
 class SocketClient {
     ws = null;
     jwt = null;
@@ -699,6 +702,9 @@ class SocketClient {
                 }
                 if (msg.outdated) {
                     vscode.window.showWarningMessage(`CodeSync: Your local changes are outdated. Please pull the latest changes.`);
+                }
+                if (!msg.conflict && !msg.outdated && (!msg.cross_branch_live_files || msg.cross_branch_live_files.length === 0)) {
+                    console.log('CodeSync: Patch update acknowledged by server');
                 }
                 break;
             case 'branch_update':
@@ -5788,6 +5794,12 @@ function parse(header) {
 
 module.exports = { parse };
 
+
+/***/ }),
+/* 30 */
+/***/ ((module) => {
+
+module.exports = require("path");
 
 /***/ })
 /******/ 	]);

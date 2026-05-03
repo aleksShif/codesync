@@ -20,7 +20,7 @@ export class FileWatcher {
     private setupWatchers() {
         // to detect a file being edited
         vscode.workspace.onDidChangeTextDocument((e) => {
-            const filePath = vscode.workspace.asRelativePath(e.document.uri);
+            const filePath = e.document.uri.fsPath;
 
             if (this.shouldIgnore(filePath)) return;
 
@@ -37,7 +37,7 @@ export class FileWatcher {
 
         // to detect a file being saved
         vscode.workspace.onDidSaveTextDocument((doc) => {
-            const filePath = vscode.workspace.asRelativePath(doc.uri);
+            const filePath = doc.uri.fsPath;
             if (!this.shouldIgnore(filePath)) {
                 this.onFileChange({ type: 'save', filePath, timestamp: new Date().toISOString() });
             }
@@ -45,7 +45,7 @@ export class FileWatcher {
 
         // to detect a file being closed
         vscode.workspace.onDidCloseTextDocument((doc) => {
-            const filePath = vscode.workspace.asRelativePath(doc.uri);
+            const filePath = doc.uri.fsPath;
             if (!this.shouldIgnore(filePath)) {
                 this.onFileChange({ type: 'close', filePath, timestamp: new Date().toISOString() });
             }
@@ -54,7 +54,7 @@ export class FileWatcher {
         // to detect a file being opened
         vscode.window.onDidChangeActiveTextEditor((editor) => {
             if (editor) {
-                const filePath = vscode.workspace.asRelativePath(editor.document.uri);
+                const filePath = editor.document.uri.fsPath;
                 if (!this.shouldIgnore(filePath)) {
                     this.onFileChange({
                         type: 'open',

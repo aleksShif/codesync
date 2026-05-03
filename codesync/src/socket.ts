@@ -1,8 +1,8 @@
 import WebSocket = require('ws');
 import * as vscode from 'vscode';
 
-const SERVER_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000';
+const SERVER_URL ='http://localhost:8000'; //https://api.codesink.app'// 
+const WS_URL = 'ws://localhost:8000'; //'wss://api.codesink.app' //
 
 export class SocketClient {
     private ws: WebSocket | null = null;
@@ -104,6 +104,9 @@ export class SocketClient {
                     vscode.window.showWarningMessage(
                         `CodeSync: Your local changes are outdated. Please pull the latest changes.`
                     );
+                }
+                if (!msg.conflict && !msg.outdated && (!msg.cross_branch_live_files || msg.cross_branch_live_files.length === 0)) {
+                    console.log('CodeSync: Patch update acknowledged by server');
                 }
                 break;
             case 'branch_update':

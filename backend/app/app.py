@@ -187,13 +187,13 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "error": "outdated",
             "detail": result["details"]
         }
-    elif result.get("conflict"):
+    elif result.get("conflict") or result.get("cross_branch_live_files"):
         response = {
             "ok": True,
             "type": "patch_update",
-            "conflict": True,
-            "conflicting_dev_lines": result["conflicting_dev_lines"],
-            "conflicting_branch_lines": result["conflicting_branch_lines"]
+            "conflict": result.get("conflict", False),
+            "conflicting_dev_lines": result.get("conflicting_dev_lines", []),
+            "cross_branch_live_files": result.get("cross_branch_live_files", [])
         }
     else:
         response = {

@@ -59,10 +59,15 @@ export async function monitorGitRepository(
     });
 }
 
-export function getCurrentCommitHash(): string | undefined {
+export function getCurrentCommitHash(repoPath?: string): string | undefined {
     const gitExtension = vscode.extensions.getExtension('vscode.git');
     if (!gitExtension) return;
     const git = gitExtension?.exports.getAPI(1);
+    
+    if (repoPath) {
+        const repo = git.repositories.find((r: any) => r.rootUri.fsPath === repoPath);
+        if (repo) return repo.state.HEAD?.commit;
+    }
     return git?.repositories[0]?.state.HEAD?.commit;
 }
 
@@ -85,7 +90,7 @@ export function parseRemoteUrl(remoteUrl: string): { owner: string; repoName: st
 }
 
 export async function computeDiff(
-    filePath: string,
+    absoluteFilePath: string,
     repoPath: string
 ): Promise<string | null> {
     try {
@@ -101,10 +106,7 @@ export async function computeDiff(
             return null;
         }
 
-        // this is to handle both relative and absolute paths
-        const absolutePath = filePath.startsWith('/') || filePath.includes(':')
-            ? vscode.Uri.file(filePath)
-            : vscode.Uri.file(`${repoPath}/${filePath}`);
+        const absolutePath = vscode.Uri.file(absoluteFilePath);
 
         console.log('DEBUG: computeDiff, Computing diff for:', absolutePath.fsPath);
         const diff = await repo.diffWithHEAD(absolutePath.fsPath);
@@ -133,9 +135,7 @@ export async function getModifiedFiles(repoPath: string): Promise<string[]> {
 
         const paths = new Set<string>();
         changes.forEach((change: any) => {
-            // Store as relative path for consistency with other parts of the app
-            const relPath = vscode.workspace.asRelativePath(change.uri);
-            paths.add(relPath);
+            paths.add(change.uri.fsPath);
         });
 
         return Array.from(paths);
