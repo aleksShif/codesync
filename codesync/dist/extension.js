@@ -42,11 +42,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(__webpack_require__(1));
-const path = __importStar(__webpack_require__(30));
-const auth_1 = __webpack_require__(2);
-const fileWatcher_1 = __webpack_require__(3);
-const git_1 = __webpack_require__(4);
-const socket_1 = __webpack_require__(5);
+const path = __importStar(__webpack_require__(2));
+const auth_1 = __webpack_require__(3);
+const fileWatcher_1 = __webpack_require__(4);
+const git_1 = __webpack_require__(5);
+const socket_1 = __webpack_require__(6);
 const socketClient = new socket_1.SocketClient();
 let statusBar;
 let currentBranch = null;
@@ -199,6 +199,12 @@ module.exports = require("vscode");
 
 /***/ }),
 /* 2 */
+/***/ ((module) => {
+
+module.exports = require("path");
+
+/***/ }),
+/* 3 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -282,7 +288,7 @@ async function getGitHubUser(token) {
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -407,7 +413,7 @@ exports.FileWatcher = FileWatcher;
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -579,7 +585,7 @@ async function getModifiedFiles(repoPath) {
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -618,7 +624,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SocketClient = void 0;
-const WebSocket = __webpack_require__(6);
+const WebSocket = __webpack_require__(7);
 const vscode = __importStar(__webpack_require__(1));
 const SERVER_URL = 'https://api.codesink.app'; //'http://localhost:8000'; 
 const WS_URL = 'wss://api.codesink.app'; // 'ws://localhost:8000'
@@ -783,17 +789,17 @@ exports.SocketClient = SocketClient;
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const WebSocket = __webpack_require__(7);
+const WebSocket = __webpack_require__(8);
 
-WebSocket.createWebSocketStream = __webpack_require__(27);
-WebSocket.Server = __webpack_require__(28);
-WebSocket.Receiver = __webpack_require__(21);
-WebSocket.Sender = __webpack_require__(24);
+WebSocket.createWebSocketStream = __webpack_require__(28);
+WebSocket.Server = __webpack_require__(29);
+WebSocket.Receiver = __webpack_require__(22);
+WebSocket.Sender = __webpack_require__(25);
 
 WebSocket.WebSocket = WebSocket;
 WebSocket.WebSocketServer = WebSocket.Server;
@@ -802,26 +808,26 @@ module.exports = WebSocket;
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex|Readable$", "caughtErrors": "none" }] */
 
 
 
-const EventEmitter = __webpack_require__(8);
-const https = __webpack_require__(9);
-const http = __webpack_require__(10);
-const net = __webpack_require__(11);
-const tls = __webpack_require__(12);
-const { randomBytes, createHash } = __webpack_require__(13);
-const { Duplex, Readable } = __webpack_require__(14);
-const { URL } = __webpack_require__(15);
+const EventEmitter = __webpack_require__(9);
+const https = __webpack_require__(10);
+const http = __webpack_require__(11);
+const net = __webpack_require__(12);
+const tls = __webpack_require__(13);
+const { randomBytes, createHash } = __webpack_require__(14);
+const { Duplex, Readable } = __webpack_require__(15);
+const { URL } = __webpack_require__(16);
 
-const PerMessageDeflate = __webpack_require__(16);
-const Receiver = __webpack_require__(21);
-const Sender = __webpack_require__(24);
-const { isBlob } = __webpack_require__(22);
+const PerMessageDeflate = __webpack_require__(17);
+const Receiver = __webpack_require__(22);
+const Sender = __webpack_require__(25);
+const { isBlob } = __webpack_require__(23);
 
 const {
   BINARY_TYPES,
@@ -833,12 +839,12 @@ const {
   kStatusCode,
   kWebSocket,
   NOOP
-} = __webpack_require__(19);
+} = __webpack_require__(20);
 const {
   EventTarget: { addEventListener, removeEventListener }
-} = __webpack_require__(25);
-const { format, parse } = __webpack_require__(26);
-const { toBuffer } = __webpack_require__(18);
+} = __webpack_require__(26);
+const { format, parse } = __webpack_require__(27);
+const { toBuffer } = __webpack_require__(19);
 
 const kAborted = Symbol('kAborted');
 const protocolVersions = [8, 13];
@@ -2201,64 +2207,64 @@ function socketOnError() {
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ ((module) => {
 
 module.exports = require("events");
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ ((module) => {
 
 module.exports = require("https");
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ ((module) => {
 
 module.exports = require("http");
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ ((module) => {
 
 module.exports = require("net");
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ ((module) => {
 
 module.exports = require("tls");
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ ((module) => {
 
 module.exports = require("crypto");
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ ((module) => {
 
 module.exports = require("stream");
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ ((module) => {
 
 module.exports = require("url");
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const zlib = __webpack_require__(17);
+const zlib = __webpack_require__(18);
 
-const bufferUtil = __webpack_require__(18);
-const Limiter = __webpack_require__(20);
-const { kStatusCode } = __webpack_require__(19);
+const bufferUtil = __webpack_require__(19);
+const Limiter = __webpack_require__(21);
+const { kStatusCode } = __webpack_require__(20);
 
 const FastBuffer = Buffer[Symbol.species];
 const TRAILER = Buffer.from([0x00, 0x00, 0xff, 0xff]);
@@ -2783,18 +2789,18 @@ function inflateOnError(err) {
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ ((module) => {
 
 module.exports = require("zlib");
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { EMPTY_BUFFER } = __webpack_require__(19);
+const { EMPTY_BUFFER } = __webpack_require__(20);
 
 const FastBuffer = Buffer[Symbol.species];
 
@@ -2926,7 +2932,7 @@ if (!process.env.WS_NO_BUFFER_UTIL) {
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ ((module) => {
 
 
@@ -2951,7 +2957,7 @@ module.exports = {
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ ((module) => {
 
 
@@ -3012,22 +3018,22 @@ module.exports = Limiter;
 
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { Writable } = __webpack_require__(14);
+const { Writable } = __webpack_require__(15);
 
-const PerMessageDeflate = __webpack_require__(16);
+const PerMessageDeflate = __webpack_require__(17);
 const {
   BINARY_TYPES,
   EMPTY_BUFFER,
   kStatusCode,
   kWebSocket
-} = __webpack_require__(19);
-const { concat, toArrayBuffer, unmask } = __webpack_require__(18);
-const { isValidStatusCode, isValidUTF8 } = __webpack_require__(22);
+} = __webpack_require__(20);
+const { concat, toArrayBuffer, unmask } = __webpack_require__(19);
+const { isValidStatusCode, isValidUTF8 } = __webpack_require__(23);
 
 const FastBuffer = Buffer[Symbol.species];
 
@@ -3724,14 +3730,14 @@ module.exports = Receiver;
 
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { isUtf8 } = __webpack_require__(23);
+const { isUtf8 } = __webpack_require__(24);
 
-const { hasBlob } = __webpack_require__(19);
+const { hasBlob } = __webpack_require__(20);
 
 //
 // Allowed token characters:
@@ -3882,26 +3888,26 @@ if (isUtf8) {
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ ((module) => {
 
 module.exports = require("buffer");
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex" }] */
 
 
 
-const { Duplex } = __webpack_require__(14);
-const { randomFillSync } = __webpack_require__(13);
+const { Duplex } = __webpack_require__(15);
+const { randomFillSync } = __webpack_require__(14);
 
-const PerMessageDeflate = __webpack_require__(16);
-const { EMPTY_BUFFER, kWebSocket, NOOP } = __webpack_require__(19);
-const { isBlob, isValidStatusCode } = __webpack_require__(22);
-const { mask: applyMask, toBuffer } = __webpack_require__(18);
+const PerMessageDeflate = __webpack_require__(17);
+const { EMPTY_BUFFER, kWebSocket, NOOP } = __webpack_require__(20);
+const { isBlob, isValidStatusCode } = __webpack_require__(23);
+const { mask: applyMask, toBuffer } = __webpack_require__(19);
 
 const kByteLength = Symbol('kByteLength');
 const maskBuffer = Buffer.alloc(4);
@@ -4496,12 +4502,12 @@ function onError(sender, err, cb) {
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { kForOnEventAttribute, kListener } = __webpack_require__(19);
+const { kForOnEventAttribute, kListener } = __webpack_require__(20);
 
 const kCode = Symbol('kCode');
 const kData = Symbol('kData');
@@ -4794,12 +4800,12 @@ function callListener(listener, thisArg, event) {
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { tokenChars } = __webpack_require__(22);
+const { tokenChars } = __webpack_require__(23);
 
 /**
  * Adds an offer to the map of extension offers or a parameter to the map of
@@ -5003,14 +5009,14 @@ module.exports = { format, parse };
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^WebSocket$" }] */
 
 
-const WebSocket = __webpack_require__(7);
-const { Duplex } = __webpack_require__(14);
+const WebSocket = __webpack_require__(8);
+const { Duplex } = __webpack_require__(15);
 
 /**
  * Emits the `'close'` event on a stream.
@@ -5170,23 +5176,23 @@ module.exports = createWebSocketStream;
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex$", "caughtErrors": "none" }] */
 
 
 
-const EventEmitter = __webpack_require__(8);
-const http = __webpack_require__(10);
-const { Duplex } = __webpack_require__(14);
-const { createHash } = __webpack_require__(13);
+const EventEmitter = __webpack_require__(9);
+const http = __webpack_require__(11);
+const { Duplex } = __webpack_require__(15);
+const { createHash } = __webpack_require__(14);
 
-const extension = __webpack_require__(26);
-const PerMessageDeflate = __webpack_require__(16);
-const subprotocol = __webpack_require__(29);
-const WebSocket = __webpack_require__(7);
-const { CLOSE_TIMEOUT, GUID, kWebSocket } = __webpack_require__(19);
+const extension = __webpack_require__(27);
+const PerMessageDeflate = __webpack_require__(17);
+const subprotocol = __webpack_require__(30);
+const WebSocket = __webpack_require__(8);
+const { CLOSE_TIMEOUT, GUID, kWebSocket } = __webpack_require__(20);
 
 const keyRegex = /^[+/0-9A-Za-z]{22}==$/;
 
@@ -5730,12 +5736,12 @@ function abortHandshakeOrEmitwsClientError(
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 
 
-const { tokenChars } = __webpack_require__(22);
+const { tokenChars } = __webpack_require__(23);
 
 /**
  * Parses the `Sec-WebSocket-Protocol` header into a set of subprotocol names.
@@ -5796,12 +5802,6 @@ function parse(header) {
 
 module.exports = { parse };
 
-
-/***/ }),
-/* 30 */
-/***/ ((module) => {
-
-module.exports = require("path");
 
 /***/ })
 /******/ 	]);
