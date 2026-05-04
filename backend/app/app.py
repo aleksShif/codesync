@@ -236,7 +236,7 @@ async def handle_branch_update(websocket: WebSocket, msg: dict, connected_dev_id
             new_base_commit=new_base_commit,
         )
 
-        # Remember dev_id in case this is the first message we receive from them.
+        # testing dev_id in case this is the first message we receive from them.
         connected_dev_id[0] = dev_id
 
         await websocket.send_text(json.dumps({

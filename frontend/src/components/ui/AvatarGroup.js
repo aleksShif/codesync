@@ -20,7 +20,7 @@ export function AvatarGroup({ users, size = 'md', maxDisplay = 3 }) {
             <div className="flex -space-x-2">
                 {displayUsers.map((user) => {
                     // Normalize the data (handles both mock users and live SSE 'dev_id' payloads)
-                    // const id = user.id || user.dev_id;
+                    //const id = user.id || user.dev_id;
                     const name = user.name || user.author;
                     const initials = user.initials || name.substring(0, 2).toUpperCase();
                     const color = user.color || 'bg-purple-600'; // Default to theme

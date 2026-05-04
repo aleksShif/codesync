@@ -1,6 +1,7 @@
 import time
 import json
-from sqlalchemy import select, delete
+import asyncio
+from sqlalchemy import select, delete, func
 from app.db.models.models import Edit, File as DBFile, Branch as DBBranch, Repository as DBRepo, User as DBUser
 from .FileStates import PatchEvent
 from .GithubAPI import GithubAPI, File
@@ -29,6 +30,7 @@ class Repo:
         self.last_activity = time.time()
         self.is_dirty = False
         self.is_loaded_from_db = False
+        self.load_lock = asyncio.Lock()
 
     def clear_dev_branch(self, dev_id: str, branch_name: str):
         """Remove all live intervals for a dev on a specific branch from the shared trees."""
@@ -55,19 +57,24 @@ class RepoManager:
 
     async def _load_repo_from_db(self, db, repo_name: str):
         repo_obj = self.repos[repo_name]
-        owner, repo_str = repo_name.split("/", 1)
-
-        stmt = (
-            select(Edit, DBFile, DBBranch, DBUser)
-            .join(DBFile, Edit.file_id == DBFile.file_id)
-            .join(DBBranch, DBFile.branch_id == DBBranch.branch_id)
-            .join(DBRepo, DBBranch.repository_id == DBRepo.repository_id)
-            .join(DBUser, Edit.user_id == DBUser.user_id)
-            .where(DBRepo.repo_name == repo_name)
-        )
         
-        result = await db.execute(stmt)
-        rows = result.all()
+        async with repo_obj.load_lock:
+            if repo_obj.is_loaded_from_db:
+                return
+                
+            owner, repo_str = repo_name.split("/", 1)
+
+            stmt = (
+                select(Edit, DBFile, DBBranch, DBUser)
+                .join(DBFile, Edit.file_id == DBFile.file_id)
+                .join(DBBranch, DBFile.branch_id == DBBranch.branch_id)
+                .join(DBRepo, DBBranch.repository_id == DBRepo.repository_id)
+                .join(DBUser, Edit.user_id == DBUser.user_id)
+                .where(func.lower(DBRepo.repo_name) == repo_name.lower())
+            )
+            
+            result = await db.execute(stmt)
+            rows = result.all()
 
         for edit, db_file, db_branch, db_user in rows:
             if edit.edit_base_commit != db_file.file_latest_commit:
@@ -101,8 +108,11 @@ class RepoManager:
 
     async def save_repo_to_db(self, db, repo_name: str):
         repo_obj = self.repos[repo_name]
+        
+        if not repo_obj.is_loaded_from_db:
+            return
 
-        repo_stmt = select(DBRepo.repository_id).where(DBRepo.repo_name == repo_name)
+        repo_stmt = select(DBRepo.repository_id).where(func.lower(DBRepo.repo_name) == repo_name.lower())
         repo_id_scalar = (await db.execute(repo_stmt)).scalar_one_or_none()
         
         if not repo_id_scalar:
@@ -360,6 +370,9 @@ class RepoManager:
             ]:
                 if key in self.github_api.branch_diffs.cache:
                     del self.github_api.branch_diffs.cache[key]
+
+        if not repo.is_loaded_from_db:
+            return
 
         # ── Wipe live dev intervals for the pushed branch/file ────────────────────────
         tree = repo.files[file_path]
