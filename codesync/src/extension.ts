@@ -10,6 +10,7 @@ let statusBar: vscode.StatusBarItem;
 let currentBranch: string | null = null;
 let baseCommitHash: string | undefined;
 let devId: string;
+let author: string; 
 let owner: string;
 let repoName: string;
 let oldHash: string | undefined;
@@ -35,6 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
     devId = githubUser.id;
+    author = githubUser.login; 
     console.log('Authentication complete');
 
     async function syncRepositoryState(repoPath: string, owner: string, repo: string, branch: string, hash: string) {
@@ -52,7 +54,8 @@ export async function activate(context: vscode.ExtensionContext) {
                         branch,
                         filePath,
                         hash,
-                        patch
+                        patch,
+                        author
                     );
                 }
             }
@@ -120,7 +123,8 @@ export async function activate(context: vscode.ExtensionContext) {
                             currentBranch!,
                             event.filePath,
                             baseCommitHash,
-                            patch
+                            patch,
+                            author
                         );
                     }
                 }

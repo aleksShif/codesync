@@ -24,7 +24,7 @@ const FileNode = ({ data, selected }) => {
         const displayUsers = viewers.slice(0, displayCount);
 
         return displayUsers.map((user, i) => {
-            const name = user.name || user.dev_id;
+            const name = user.name || user.author;
             const color = CURSOR_COLORS[i % CURSOR_COLORS.length];
 
             const angle = (i / displayCount) * 2 * Math.PI + (Math.PI / 4);
@@ -35,7 +35,7 @@ const FileNode = ({ data, selected }) => {
 
             return (
                 <div 
-                    key={user.dev_id} 
+                    key={user.author} 
                     className="group pointer-events-auto" // Added group and re-enabled pointer events
                     style={{
                         position: 'absolute',

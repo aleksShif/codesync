@@ -18,9 +18,12 @@ export function useBranchActivity(repoId, branchName) {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log('Message received, attempting to display active devs'); 
+                if (data.type === 'activity_snapshot') {
+                    setActiveDevs(data.active_devs || {});
+                }
                 // Extract the specific branch mapping, fallback to empty object
-                const branchActiveDevs = data[branchName] || {};
-                setActiveDevs(branchActiveDevs);
+                console.log('Devs displayed: ', data.active_devs); 
             } catch (err) {
                 console.error('Failed to parse activity stream:', err);
             }

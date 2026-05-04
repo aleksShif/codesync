@@ -3,7 +3,7 @@ import { AvatarGroup } from './AvatarGroup';
 
 export function ViewerStack({ users }) {
   // Hide the stack completely if 1 or fewer users are present
-  if (!users || users.length <= 1) return null;
+  if (!users || users.length < 1) return null;
 
   return (
     <div className="flex items-center space-x-4">

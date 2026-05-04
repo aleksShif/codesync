@@ -51,6 +51,7 @@ let statusBar;
 let currentBranch = null;
 let baseCommitHash;
 let devId;
+let author;
 let owner;
 let repoName;
 let oldHash;
@@ -73,6 +74,7 @@ async function activate(context) {
         return;
     }
     devId = githubUser.id;
+    author = githubUser.login;
     console.log('Authentication complete');
     async function syncRepositoryState(repoPath, owner, repo, branch, hash) {
         const modifiedFiles = await (0, git_1.getModifiedFiles)(repoPath);
@@ -82,7 +84,7 @@ async function activate(context) {
                 const patch = await (0, git_1.computeDiff)(filePath, repoPath);
                 if (patch) {
                     console.log(`DEBUG: Sending patch for ${filePath} on branch ${branch}`);
-                    socketClient.sendPatchUpdate(devId, owner, repo, branch, filePath, hash, patch);
+                    socketClient.sendPatchUpdate(devId, owner, repo, branch, filePath, hash, patch, author);
                 }
             }
         }
@@ -130,7 +132,7 @@ async function activate(context) {
                 const patch = await (0, git_1.computeDiff)(event.filePath, repo.path);
                 if (patch) {
                     console.log('DEBUG: Calling sendPatchUpdate (edit) for', event.filePath);
-                    socketClient.sendPatchUpdate(devId, owner, repoName, currentBranch, event.filePath, baseCommitHash, patch);
+                    socketClient.sendPatchUpdate(devId, owner, repoName, currentBranch, event.filePath, baseCommitHash, patch, author);
                 }
             }
         });
@@ -615,8 +617,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SocketClient = void 0;
 const WebSocket = __webpack_require__(6);
 const vscode = __importStar(__webpack_require__(1));
-const SERVER_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000';
+const SERVER_URL = 'https://api.codesink.app';
+const WS_URL = 'wss://api.codesink.app';
 class SocketClient {
     ws = null;
     jwt = null;
