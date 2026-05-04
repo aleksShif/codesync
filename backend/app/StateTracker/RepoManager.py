@@ -391,11 +391,13 @@ class RepoManager:
             for file_path, intervals in files.items():
                 if not intervals:
                     continue
-                last_save = max(ival.data.timestamp for ival in intervals)
+                latest_ival = max(intervals, key=lambda i: i.data.timestamp)
+                last_save = latest_ival.data.timestamp
                 if now - last_save > inactivity_threshold:
                     continue
-                result.setdefault(branch, {}).setdefault(file_path, []).append({
+                result.setdefault(file_path, []).append({
                     "dev_id": dev_id,
+                    "author": latest_ival.data.author,
                     "last_save": last_save
                 })
 

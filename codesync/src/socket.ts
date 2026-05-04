@@ -1,8 +1,8 @@
 import WebSocket = require('ws');
 import * as vscode from 'vscode';
 
-const SERVER_URL ='http://localhost:8000'; //https://api.codesink.app'// 
-const WS_URL = 'ws://localhost:8000'; //'wss://api.codesink.app' //
+const SERVER_URL ='https://api.codesink.app'; 
+const WS_URL = 'wss://api.codesink.app'; 
 
 export class SocketClient {
     private ws: WebSocket | null = null;
