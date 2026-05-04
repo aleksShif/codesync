@@ -49,7 +49,7 @@ async def sync_inactive_repos_task():
     while True:
         try:
             # 5 minutes threshold
-            inactive_repos = await repo_manager.get_inactive_dirty_repos(threshold_seconds=5)
+            inactive_repos = await repo_manager.get_inactive_dirty_repos(threshold_seconds=1)
             for repo_name in inactive_repos:
                 async with AsyncSessionLocal() as db:
                     await repo_manager.save_repo_to_db(db, repo_name)
@@ -187,13 +187,13 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "error": "outdated",
             "detail": result["details"]
         }
-    elif result.get("conflict"):
+    elif result.get("conflict") or result.get("cross_branch_live_files"):
         response = {
             "ok": True,
             "type": "patch_update",
-            "conflict": True,
-            "conflicting_dev_lines": result["conflicting_dev_lines"],
-            "conflicting_branch_lines": result["conflicting_branch_lines"]
+            "conflict": result.get("conflict", False),
+            "conflicting_dev_lines": result.get("conflicting_dev_lines", []),
+            "cross_branch_live_files": result.get("cross_branch_live_files", [])
         }
     else:
         response = {

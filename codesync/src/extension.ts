@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { AuthManager, getGitHubUser } from './auth';
 import { FileWatcher } from './fileWatcher';
 import { monitorGitRepository, getCurrentCommitHash, parseRemoteUrl, computeDiff, getModifiedFiles } from './git';
@@ -44,13 +45,14 @@ export async function activate(context: vscode.ExtensionContext) {
             for (const filePath of modifiedFiles) {
                 const patch = await computeDiff(filePath, repoPath);
                 if (patch) {
-                    console.log(`DEBUG: Sending patch for ${filePath} on branch ${branch}`);
+                    const relativePath = path.relative(repoPath, filePath);
+                    console.log(`DEBUG: Sending patch for ${relativePath} on branch ${branch}`);
                     socketClient.sendPatchUpdate(
                         devId,
                         owner,
                         repo,
                         branch,
-                        filePath,
+                        relativePath,
                         hash,
                         patch
                     );
@@ -64,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await monitorGitRepository(
         async (repo) => {
             // Initial setup for the detected repository
-            baseCommitHash = getCurrentCommitHash();
+            baseCommitHash = getCurrentCommitHash(repo.path);
             statusBar.text = `$(git-branch) CodeSync: ${repo.branch}`;
             vscode.window.showInformationMessage(`CodeSync: Monitoring ${repo.remoteUrl}`);
 
@@ -112,13 +114,14 @@ export async function activate(context: vscode.ExtensionContext) {
                     }
                     const patch = await computeDiff(event.filePath, repo.path);
                     if (patch) {
-                        console.log('DEBUG: Calling sendPatchUpdate (edit) for', event.filePath);
+                        const relativePath = path.relative(repo.path, event.filePath);
+                        console.log('DEBUG: Calling sendPatchUpdate (edit) for', relativePath);
                         socketClient.sendPatchUpdate(
                             devId,
                             owner,
                             repoName,
                             currentBranch!,
-                            event.filePath,
+                            relativePath,
                             baseCommitHash,
                             patch
                         );
@@ -129,7 +132,7 @@ export async function activate(context: vscode.ExtensionContext) {
         },
         async (repo) => {
             console.log('DEBUG: onRepoChanged called. Branch:', repo.branch, 'Current:', currentBranch);
-            const newCommitHash = getCurrentCommitHash();
+            const newCommitHash = getCurrentCommitHash(repo.path);
 
             if (repo.branch != currentBranch) {
                 console.log('DEBUG: Branch switch detected:', currentBranch, '->', repo.branch);

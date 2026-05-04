@@ -1,6 +1,5 @@
 import time
 import json
-import datetime
 from sqlalchemy import select, delete
 from app.db.models.models import Edit, File as DBFile, Branch as DBBranch, Repository as DBRepo, User as DBUser
 from .FileStates import PatchEvent
@@ -149,7 +148,7 @@ class RepoManager:
                     new_edits.append(Edit(
                         user_id=user_id,
                         file_id=file_id,
-                        edit_timestamp=datetime.datetime.fromtimestamp(patch.timestamp),
+                        edit_timestamp=datetime.fromtimestamp(patch.timestamp),
                         edit_patch=patch.patch_text,
                         edit_base_commit=patch.base_commit,
                         edit_ranges=json.dumps(patch.touched_ranges)
