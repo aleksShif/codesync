@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getRepoDetails } from '../api';
+export const BACK_URL = process.env.REACT_APP_BACK_URL;
 
 // --- Icons ---
 const FolderIcon = ({ expanded }) => (
@@ -146,7 +147,7 @@ const TreeNode = ({ node, level, expandedFolders, toggleFolder }) => {
 
 
 const RepoDetailsPage = () => {
-    console.log('Starting'); 
+    console.log('Starting');
     const { repoId } = useParams();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -162,7 +163,7 @@ const RepoDetailsPage = () => {
     const [fileTree, setFileTree] = useState(null);
 
     useEffect(() => {
-        console.log('Starting 2'); 
+        console.log('Starting 2');
         if (!repoData) return; // wait for data to load first
 
         const branch = repoData.active_branch?.name;
@@ -170,9 +171,9 @@ const RepoDetailsPage = () => {
 
         console.log('Setting up SSE for repo:', repoId, 'branch:', branch);
 
-        
+
         const eventSource = new EventSource(
-            `http://localhost:8000/activity/repos/${repoId}/stream/${branch}`,
+            `${BACK_URL}activity/repos/${repoId}/stream/${branch}`,
             { withCredentials: true } // sends the auth cookie
         );
 
