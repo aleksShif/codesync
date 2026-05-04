@@ -171,10 +171,10 @@ const RepoDetailsPage = () => {
         console.log('Setting up SSE for repo:', repoId, 'branch:', branch);
 
         
-        const eventSource = new EventSource(
-            `http://localhost:8000/activity/repos/${repoId}/stream/${branch}`,
-            { withCredentials: true } // sends the auth cookie
-        );
+        // const eventSource = new EventSource(
+        //     `http://localhost:8000/activity/repos/${repoId}/stream/${branch}`,
+        //     { withCredentials: true } // sends the auth cookie
+        // );
 
         eventSource.onopen = () => {
             console.log('SSE connection opened');
