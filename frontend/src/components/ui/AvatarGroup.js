@@ -67,7 +67,7 @@ export function AvatarGroup({ users, size = 'md', maxDisplay = 3 }) {
                     </div>
                     <div className="max-h-48 overflow-y-auto py-1">
                         {hiddenUsers.map((user) => {
-                            const id = user.id || user.dev_id;
+                            // const id = user.id || user.dev_id;
                             const name = user.name || user.author;
                             const initials = user.initials || name.substring(0, 2).toUpperCase();
                             const color = user.color || 'bg-purple-600';
