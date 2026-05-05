@@ -48,7 +48,7 @@ async def sync_inactive_repos_task():
     from app.db.db import AsyncSessionLocal
     while True:
         try:
-            # 5 minutes threshold test
+            # 5 minutes threshold testing
             inactive_repos = await repo_manager.get_inactive_dirty_repos(threshold_seconds=1)
             for repo_name in inactive_repos:
                 async with AsyncSessionLocal() as db:
