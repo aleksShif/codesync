@@ -547,7 +547,8 @@ async function computeDiff(absoluteFilePath, repoPath) {
             console.warn('DEBUG: computeDiff, Repo path mismatch:', repoPath);
             return null;
         }
-        const absolutePath = vscode.Uri.file(absoluteFilePath);
+        const normalizedFilePath = absoluteFilePath.replace(/\\/g, '/');
+        const absolutePath = vscode.Uri.joinPath(vscode.Uri.file(repoPath), normalizedFilePath);
         console.log('DEBUG: computeDiff, Computing diff for:', absolutePath.fsPath);
         const diff = await repo.diffWithHEAD(absolutePath.fsPath);
         return diff || null;
@@ -573,6 +574,7 @@ async function getModifiedFiles(repoPath) {
         ];
         const paths = new Set();
         changes.forEach((change) => {
+            const relPath = vscode.workspace.asRelativePath(change.uri).replace(/\\/g, '/');
             paths.add(change.uri.fsPath);
         });
         return Array.from(paths);
