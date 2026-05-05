@@ -106,7 +106,7 @@ async def developer_updates(websocket: WebSocket, user=Depends(get_current_user_
     """
     await websocket.accept()
 
-    # hlo Track dev_id vfirst message so we can clean up on disconnect.
+    # hlo Track dev_id vfhelloirst message so we can clean up on disconnect.
     connected_dev_id: list[str] = [None]
 
     try:
