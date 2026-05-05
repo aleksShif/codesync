@@ -49,7 +49,7 @@ const RepoDetailsPage = () => {
     const uniqueBranchViewers = React.useMemo(() => {
         const unique = new Map();
         Object.values(activeDevs).forEach(devArray => {
-            devArray.forEach(dev => unique.set(dev.id, dev));
+            devArray.forEach(dev => unique.set(dev.dev_id, dev));
         });
         const viewers = Array.from(unique.values());
         viewers.forEach(v => console.log('viewer:', v.dev_id, v.author));
