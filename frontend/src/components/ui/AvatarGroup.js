@@ -20,14 +20,14 @@ export function AvatarGroup({ users, size = 'md', maxDisplay = 3 }) {
             <div className="flex -space-x-2">
                 {displayUsers.map((user) => {
                     // Normalize the data (handles both mock users and live SSE 'dev_id' payloads)
-                    //const id = user.id || user.dev_id;
+                    const id = user.id || user.dev_id;
                     const name = user.name || user.author;
                     const initials = user.initials || name.substring(0, 2).toUpperCase();
                     const color = user.color || 'bg-purple-600'; // Default to theme
 
                     return (
                         <div
-                            key={name}
+                            key={id}
                             className={`group relative flex ${sizeClasses} cursor-pointer items-center justify-center rounded-full font-bold text-white ${ringClass} ring-slate-900 transition-transform hover:z-10 hover:-translate-y-1 ${color}`}
                         >
                             {user.avatarUrl ? (
@@ -67,14 +67,14 @@ export function AvatarGroup({ users, size = 'md', maxDisplay = 3 }) {
                     </div>
                     <div className="max-h-48 overflow-y-auto py-1">
                         {hiddenUsers.map((user) => {
-                            // const id = user.id || user.dev_id;
+                            const id = user.id || user.dev_id;
                             const name = user.name || user.author;
                             const initials = user.initials || name.substring(0, 2).toUpperCase();
                             const color = user.color || 'bg-purple-600';
 
                             return (
                                 <div
-                                    key={name}
+                                    key={id}
                                     className="flex items-center px-4 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-700/50"
                                 >
                                     <div className={`mr-3 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white ${color}`}>
