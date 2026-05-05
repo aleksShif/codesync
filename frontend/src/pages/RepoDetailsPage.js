@@ -45,12 +45,20 @@ const RepoDetailsPage = () => {
     // Hook into the SSE stream
     const activeDevs = useBranchActivity(repoId, activeBranchName);
 
-    // Compute unique developers active across the ENTIRE branch for the header
     const uniqueBranchViewers = React.useMemo(() => {
+        // Normalize and merge duplicate paths
+        const normalizedActiveDevs = {};
+        Object.entries(activeDevs).forEach(([path, devArray]) => {
+            const normalizedPath = path.replace(/\\/g, '/');
+            if (normalizedActiveDevs[normalizedPath]) {
+                normalizedActiveDevs[normalizedPath] = [...normalizedActiveDevs[normalizedPath], ...devArray];
+            } else {
+                normalizedActiveDevs[normalizedPath] = devArray;
+            }
+        });
+
+        // Then deduplicate devs as before, but using normalizedActiveDevs
         const unique = new Map();
-        const normalizedActiveDevs = Object.fromEntries(
-            Object.entries(activeDevs).map(([path, devArray]) => [path.replace(/\\/g, '/'), devArray])
-        );
         Object.values(normalizedActiveDevs).forEach(devArray => {
             devArray.forEach(dev => unique.set(dev.dev_id, dev));
         });
@@ -58,6 +66,7 @@ const RepoDetailsPage = () => {
         viewers.forEach(v => console.log('viewer:', v.dev_id, v.author));
         return viewers;
     }, [activeDevs]);
+
 
     useEffect(() => {
         setLoading(true);

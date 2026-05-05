@@ -159,7 +159,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "detail": f"Required field missing: {e}"
         }))
         return
-
+    
     # Remember this dev_id so disconnect handler can clean up their intervals.
     connected_dev_id[0] = patch.dev_id
 
@@ -179,7 +179,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "branch": patch.branch,
             "active_devs": snapshot
         })
-        
+
     if result.get("outdated"):
         response = {
             "ok": True,
