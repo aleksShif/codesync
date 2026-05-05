@@ -179,7 +179,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "branch": patch.branch,
             "active_devs": snapshot
         })
-
+        
     if result.get("outdated"):
         response = {
             "ok": True,
