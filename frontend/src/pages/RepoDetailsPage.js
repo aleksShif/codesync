@@ -41,11 +41,10 @@ const RepoDetailsPage = () => {
 
     // ... existing state ...
     const activeBranchName = repoData?.active_branch?.name;
-    
+
     // Hook into the SSE stream
     const activeDevs = useBranchActivity(repoId, activeBranchName);
 
-    // Compute unique developers active across the ENTIRE branch for the header
     const uniqueBranchViewers = React.useMemo(() => {
         const unique = new Map();
         Object.values(activeDevs).forEach(devArray => {
@@ -55,6 +54,7 @@ const RepoDetailsPage = () => {
         viewers.forEach(v => console.log('viewer:', v.dev_id, v.author));
         return viewers;
     }, [activeDevs]);
+
 
     useEffect(() => {
         setLoading(true);

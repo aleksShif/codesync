@@ -13,7 +13,7 @@ def extract_hunk_ranges(patch_text: str):
     """
     ranges = []
 
-    for line in patch_text.splitlines():
+    for line in patch_text.splitlines(): 
         match = HUNK_RE.match(line)
         if match:
             start = int(match.group(1))

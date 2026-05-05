@@ -159,7 +159,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
             "detail": f"Required field missing: {e}"
         }))
         return
-
+    
     # Remember this dev_id so disconnect handler can clean up their intervals.
     connected_dev_id[0] = patch.dev_id
 
@@ -173,11 +173,16 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
     sub_key = f"{file.owner}/{file.repo}:{patch.branch}"
     if activity_feed.has_subscribers(sub_key):
         snapshot = repo_manager.get_active_devs(file.owner, file.repo, patch.branch)
+        new_snapshot = {}
+        for key in snapshot:
+            newkey = key.replace('\\', '/')
+            new_snapshot[newkey] = snapshot[key]
+
         await activity_feed.publish(sub_key, {
             "type": "activity_snapshot",
             "repo": f"{file.owner}/{file.repo}",
             "branch": patch.branch,
-            "active_devs": snapshot
+            "active_devs": new_snapshot
         })
 
     if result.get("outdated"):
@@ -264,11 +269,16 @@ async def periodic_activity_push():
                 repo_key, branch = sub_key.rsplit(":", 1)
                 owner, repo_name = repo_key.split("/", 1)
                 snapshot = repo_manager.get_active_devs(owner, repo_name, branch)
+                new_snapshot = {}
+                for key in snapshot:
+                    newkey = key.replace('\\', '/')
+                    new_snapshot[newkey] = snapshot[key]
+
                 await activity_feed.publish(sub_key, {
                     "type": "activity_snapshot",
                     "repo": repo_key,
                     "branch": branch,
-                    "active_devs": snapshot
+                    "active_devs": new_snapshot
                 })
         except Exception as e:
             logger.error(f"periodic_activity_push error: {e}")
