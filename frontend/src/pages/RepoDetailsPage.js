@@ -51,7 +51,9 @@ const RepoDetailsPage = () => {
         Object.values(activeDevs).forEach(devArray => {
             devArray.forEach(dev => unique.set(dev.id, dev));
         });
-        return Array.from(unique.values());
+        const viewers = Array.from(unique.values());
+        viewers.forEach(v => console.log('viewer:', v.dev_id, v.author));
+        return viewers;
     }, [activeDevs]);
 
     useEffect(() => {
