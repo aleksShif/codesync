@@ -46,20 +46,8 @@ const RepoDetailsPage = () => {
     const activeDevs = useBranchActivity(repoId, activeBranchName);
 
     const uniqueBranchViewers = React.useMemo(() => {
-        // Normalize and merge duplicate paths
-        const normalizedActiveDevs = {};
-        Object.entries(activeDevs).forEach(([path, devArray]) => {
-            const normalizedPath = path.replace(/\\/g, '/');
-            if (normalizedActiveDevs[normalizedPath]) {
-                normalizedActiveDevs[normalizedPath] = [...normalizedActiveDevs[normalizedPath], ...devArray];
-            } else {
-                normalizedActiveDevs[normalizedPath] = devArray;
-            }
-        });
-
-        // Then deduplicate devs as before, but using normalizedActiveDevs
         const unique = new Map();
-        Object.values(normalizedActiveDevs).forEach(devArray => {
+        Object.values(activeDevs).forEach(devArray => {
             devArray.forEach(dev => unique.set(dev.dev_id, dev));
         });
         const viewers = Array.from(unique.values());
