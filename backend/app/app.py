@@ -183,6 +183,7 @@ async def handle_patch_update(websocket: WebSocket, msg: dict, connected_dev_id:
     if result.get("outdated"):
         response = {
             "ok": True,
+            "outdated":True,
             "type": "patch_update",
             "error": "outdated",
             "detail": result["details"]
